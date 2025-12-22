@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pip:*)",
+      "Bash(git:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "env": {
+    "PYTHONUNBUFFERED": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYGAME_HIDE_SUPPORT_PROMPT": "1"
+  },
+  "model": "opus",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m py_compile \"$CLAUDE_FILE_PATH\" 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "cmd /c \".claude\\statusline.bat\""
+  },
+  "cleanupPeriodDays": 30
+}

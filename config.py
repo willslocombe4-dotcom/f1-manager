@@ -1,0 +1,67 @@
+"""
+F1 Manager - Game Configuration
+"""
+
+# Screen settings
+SCREEN_WIDTH = 1600
+SCREEN_HEIGHT = 900
+FPS = 60
+
+# Layout
+TRACK_VIEW_WIDTH = 1000
+TIMING_VIEW_WIDTH = 600
+TIMING_VIEW_X = TRACK_VIEW_WIDTH
+
+# Track settings
+TRACK_CENTER_X = TRACK_VIEW_WIDTH // 2
+TRACK_CENTER_Y = SCREEN_HEIGHT // 2
+TRACK_OUTER_RADIUS = 350
+TRACK_INNER_RADIUS = 250
+TRACK_WIDTH = TRACK_OUTER_RADIUS - TRACK_INNER_RADIUS
+
+# Car settings
+CAR_SIZE = 12
+CAR_SPACING = 25  # Minimum distance between cars on same position
+BASE_SPEED = 0.25  # Base speed in pixels per frame (adjusted for realistic lap times)
+SPEED_VARIANCE = 0.3  # Speed variation between cars
+
+# Race settings
+NUM_CARS = 20
+NUM_TEAMS = 10
+DRIVERS_PER_TEAM = 2
+
+# Colors (UI)
+BG_COLOR = (15, 15, 15)  # Dark background
+TRACK_BG_COLOR = (20, 20, 20)
+TIMING_BG_COLOR = (18, 18, 18)
+TRACK_COLOR = (40, 40, 40)
+TRACK_LINE_COLOR = (60, 60, 60)
+TEXT_COLOR = (255, 255, 255)
+TEXT_GRAY = (150, 150, 150)
+POSITION_GAIN_COLOR = (0, 255, 100)
+POSITION_LOSS_COLOR = (255, 50, 50)
+
+# Fonts
+FONT_SIZE_LARGE = 32
+FONT_SIZE_MEDIUM = 20
+FONT_SIZE_SMALL = 16
+
+# Tire compounds
+TIRE_SOFT = "SOFT"
+TIRE_MEDIUM = "MEDIUM"
+TIRE_HARD = "HARD"
+
+TIRE_COLORS = {
+    TIRE_SOFT: (255, 50, 50),
+    TIRE_MEDIUM: (255, 215, 0),
+    TIRE_HARD: (240, 240, 240)
+}
+
+# Track visual elements
+GRASS_BASE_COLOR = (30, 80, 30)
+GRASS_LIGHT_COLOR = (40, 100, 40)
+GRAVEL_COLOR = (194, 178, 128)
+GRAVEL_BORDER_COLOR = (170, 155, 110)
+KERB_RED = (200, 0, 0)
+KERB_WHITE = (255, 255, 255)
+KERB_WIDTH = 8  # Width of kerb stripes
