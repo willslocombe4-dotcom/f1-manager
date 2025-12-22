@@ -8,12 +8,76 @@ A multi-agent development pipeline for the F1 Manager game. Agents collaborate t
 
 | I want to... | Start with |
 |--------------|------------|
-| Add a new feature | `@f1-director` → routes to pipeline |
+| **Brainstorm freely** | `@f1-idea-designer` (Director stays INACTIVE) |
+| **Build a feature** | "activate director" → `@f1-director` routes to pipeline |
+| **Build from backlog** | "activate director" → "process backlog" |
 | Fix a bug | `@f1-director` → routes to `@f1-debugger` |
 | Refactor code | `@f1-director` → routes to `@f1-refactor` |
-| Brainstorm ideas | `@f1-idea-designer` |
 | Create a track | `python tools/track_editor.py` |
-| Check pipeline status | `.opencode/context/f1-director-context.md` |
+| Check status | `.opencode/context/f1-director-context.md` |
+
+---
+
+## Brainstorm Mode (NEW!)
+
+The Director has two modes: **INACTIVE** (default) and **ACTIVE**.
+
+### INACTIVE Mode (Brainstorm)
+
+```
+You ↔ @f1-idea-designer (free exploration) → Ideas saved to backlog
+```
+
+- **Director is dormant** - no pipeline orchestration
+- Chat freely with `@f1-idea-designer`
+- Explore ideas without commitment
+- Approved designs saved to backlog for later
+
+**Perfect for:** "I have some ideas but I'm not ready to build yet"
+
+### ACTIVE Mode (Build)
+
+```
+You → @f1-director → Full pipeline → Working code
+```
+
+- **Director orchestrates everything**
+- Routes to correct agents
+- Manages the full implementation pipeline
+- Can process ideas from the backlog
+
+**Perfect for:** "Let's actually build something"
+
+### Mode Commands
+
+| Say This | Result |
+|----------|--------|
+| "activate director" | Switch to ACTIVE mode |
+| "deactivate director" | Switch to INACTIVE mode |
+| "brainstorm mode" | Switch to INACTIVE mode |
+| "build mode" | Switch to ACTIVE mode |
+| "process backlog" | ACTIVE + show saved ideas |
+
+### Typical Workflow
+
+```
+1. Brainstorm Phase (INACTIVE)
+   You ↔ @f1-idea-designer
+   "Save this" → Added to backlog
+   "Let's explore another idea..."
+   ↔ More brainstorming
+   
+2. Build Phase (ACTIVE)
+   "activate director"
+   "process backlog"
+   → Pick idea #2
+   → Full pipeline runs
+   → Feature implemented!
+   
+3. Back to Brainstorming
+   "deactivate director"
+   ↔ More ideas...
+```
 
 ---
 
@@ -61,6 +125,16 @@ User → @f1-director → @f1-prompt-builder (if vague)
                     → @f1-feature-coder (implement)
                     → @f1-reviewer (review)
                     → @f1-git-manager (commit)
+```
+
+### 💡 From Backlog (Skips Early Stages)
+```
+User → "process backlog" → @f1-director shows ideas
+     → User picks idea → @f1-onboarding (briefing)
+                       → @f1-feature-planner (plan)
+                       → @f1-feature-coder (implement)
+                       → @f1-reviewer (review)
+                       → @f1-git-manager (commit)
 ```
 
 ### 🐛 Bug Fix
@@ -209,16 +283,20 @@ F1Manager.run() loop:
 ## Best Practices
 
 ### For Users
-1. Start with `@f1-director` for new requests
-2. Check pipeline status for ongoing work
-3. Be specific about what you want
-4. Let the pipeline complete before new requests
+1. **Brainstorm first** - Use INACTIVE mode with `@f1-idea-designer` to explore ideas
+2. **Build when ready** - "activate director" when you want to implement
+3. **Use the backlog** - "process backlog" to pick from saved ideas
+4. Check pipeline status for ongoing work
+5. Be specific about what you want
+6. Let the pipeline complete before new requests
 
 ### For Agents
 1. Always update context files
 2. Follow handoff protocols exactly
 3. Test changes before handoff
 4. Document decisions made
+5. **@f1-director:** Check mode FIRST (ACTIVE/INACTIVE)
+6. **@f1-idea-designer:** Save to backlog when Director is INACTIVE
 
 ---
 

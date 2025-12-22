@@ -19,7 +19,17 @@
 
 | Date | Feature | Complexity | Status | Notes |
 |------|---------|------------|--------|-------|
-| - | - | - | - | No designs yet |
+| - | No designs yet | - | - | - |
+
+### Design Archive
+
+*(Full designs are saved below when approved)*
+
+---
+
+*(No designs yet)*
+
+---
 
 ---
 

@@ -1,6 +1,29 @@
 # F1 Director Context
 
-**Last Updated:** Not yet used
+**Last Updated:** 2025-12-22
+
+---
+
+## Director Mode
+
+**Mode:** INACTIVE
+
+> When INACTIVE: User brainstorms freely with @f1-idea-designer. Ideas saved to backlog.
+> When ACTIVE: Director orchestrates the full development pipeline.
+
+**Toggle Commands:** "activate director" / "deactivate director" / "brainstorm mode" / "build mode"
+
+---
+
+## Idea Backlog
+
+Ideas saved during INACTIVE mode for later implementation:
+
+| # | Idea | Priority | Complexity | Added | Status |
+|---|------|----------|------------|-------|--------|
+| - | No ideas yet | - | - | - | - |
+
+**Total Ideas:** 0
 
 ---
 
@@ -31,6 +54,7 @@ None
 | Bugs Fixed | 0 |
 | Refactors Done | 0 |
 | Tools Built | 1 (track_editor) |
+| Ideas in Backlog | 0 |
 | Active Pipeline | None |
 
 ---
