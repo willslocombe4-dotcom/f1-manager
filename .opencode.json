@@ -1,0 +1,132 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "data": {
+    "directory": ".opencode"
+  },
+  "instructions": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    ".opencode/context/*.md"
+  ],
+  "tools": {
+    "read": true,
+    "write": true,
+    "edit": true,
+    "glob": true,
+    "grep": true,
+    "bash": true,
+    "todoread": true,
+    "todowrite": true
+  },
+  "permission": {
+    "write": "ask",
+    "edit": "ask",
+    "bash": {
+      "python main.py": "allow",
+      "python *": "ask",
+      "pip *": "ask",
+      "git status": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git add*": "ask",
+      "git commit*": "ask",
+      "git push*": "ask",
+      "*": "ask"
+    }
+  },
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Default build agent for F1 Manager development"
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Planning agent - read-only analysis",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    },
+    "f1-reviewer": {
+      "mode": "subagent",
+      "model": "opencode/gemini-3-pro",
+      "description": "Code review agent (Gemini 2M context)",
+      "prompt": "{file:./.opencode/agent/f1-reviewer.md}"
+    },
+    "f1-onboarding": {
+      "mode": "subagent",
+      "model": "opencode/gemini-3-pro",
+      "description": "Briefing agent for new features (Gemini 2M context)",
+      "prompt": "{file:./.opencode/agent/f1-onboarding.md}"
+    },
+    "f1-debugger": {
+      "mode": "subagent",
+      "model": "opencode/gemini-3-pro",
+      "description": "Bug tracer - finds root causes (Gemini 2M context)",
+      "prompt": "{file:./.opencode/agent/f1-debugger.md}"
+    },
+    "f1-refactor": {
+      "mode": "subagent",
+      "model": "opencode/gemini-3-pro",
+      "description": "Large-scale refactoring (Gemini 2M context)",
+      "prompt": "{file:./.opencode/agent/f1-refactor.md}"
+    },
+    "f1-bug-fixer": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Fixes bugs based on debugger findings",
+      "prompt": "{file:./.opencode/agent/f1-bug-fixer.md}"
+    },
+    "f1-feature-coder": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Implements features based on plans",
+      "prompt": "{file:./.opencode/agent/f1-feature-coder.md}"
+    },
+    "f1-feature-planner": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Creates technical implementation plans",
+      "prompt": "{file:./.opencode/agent/f1-feature-planner.md}"
+    },
+    "f1-director": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Orchestrates the development pipeline",
+      "prompt": "{file:./.opencode/agent/f1-director.md}"
+    },
+    "f1-git-manager": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Manages git commits and pushes",
+      "prompt": "{file:./.opencode/agent/f1-git-manager.md}"
+    },
+    "f1-idea-designer": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Brainstorms and designs new features",
+      "prompt": "{file:./.opencode/agent/f1-idea-designer.md}"
+    },
+    "f1-prompt-builder": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Helps build detailed feature prompts",
+      "prompt": "{file:./.opencode/agent/f1-prompt-builder.md}"
+    },
+    "f1-tool-builder": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Builds development tools and editors",
+      "prompt": "{file:./.opencode/agent/f1-tool-builder.md}"
+    },
+    "f1-track-importer": {
+      "mode": "subagent",
+      "model": "opencode/claude-opus-4-5",
+      "description": "Imports exported track files",
+      "prompt": "{file:./.opencode/agent/f1-track-importer.md}"
+    }
+  }
+}
