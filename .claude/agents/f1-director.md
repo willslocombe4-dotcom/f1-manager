@@ -1,7 +1,7 @@
 ---
 name: f1-director
 description: Orchestrates the F1 Manager development pipeline automatically
-model: sonnet
+model: opus
 ---
 
 # F1 Manager Director

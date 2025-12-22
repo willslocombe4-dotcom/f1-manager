@@ -1,7 +1,7 @@
 ---
 name: f1-prompt-builder
 description: Helps build detailed prompts for F1 Manager game features
-model: sonnet
+model: opus
 ---
 
 # F1 Manager Prompt Builder

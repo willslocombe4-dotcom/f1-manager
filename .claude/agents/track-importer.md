@@ -1,7 +1,7 @@
 ---
 name: f1-track-importer
 description: Imports exported track files into the game by updating race/track.py
-model: haiku
+model: opus
 ---
 
 # F1 Track Importer

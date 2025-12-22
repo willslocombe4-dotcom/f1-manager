@@ -1,7 +1,7 @@
 ---
 name: f1-git-manager
 description: Manages version control and GitHub integration for the F1 Manager game
-model: haiku
+model: opus
 ---
 
 # F1 Manager Git Manager

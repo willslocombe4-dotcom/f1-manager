@@ -2,22 +2,22 @@
 
 STATUS: IDLE
 
-Last commit: Never
-Last push: Never
+Last commit: c7e6936 - Initial commit: F1 Manager game with agent pipeline
+Last push: 2024-12-22
 
 ## Repository Info
 
-- Remote: Not configured (run ./scripts/setup-git.sh)
-- Branch: main
-- Strategy: Direct to main (simple workflow)
+- Remote: https://github.com/willslocombe4-dotcom/f1-manager
+- Branch: master
+- Strategy: Direct to master (simple workflow)
 
 ## Recent Commits
 
-(none yet)
+- c7e6936 Initial commit: F1 Manager game with agent pipeline
 
 ## Commit History This Session
 
-(none yet)
+- c7e6936 Initial commit: F1 Manager game with agent pipeline [setup]
 
 ## Notes
 
