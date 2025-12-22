@@ -100,19 +100,15 @@ class TimingScreen:
             # Gap to leader or ahead
             if car.position == 1:
                 gap_text = self.font_medium.render("LEADER", True, config.TEXT_COLOR)
-            elif car.gap_to_ahead < 0.1:
-                # Show interval to car ahead
-                gap_str = f"+{car.gap_to_ahead:.3f}"
-                gap_text = self.font_medium.render(gap_str, True, config.TEXT_GRAY)
+            elif car.gap_to_leader >= 1.0:
+                # Show lapped indicator if a full lap behind (progress-based check)
+                laps_down = int(car.gap_to_leader)
+                gap_str = f"+{laps_down}L"
+                gap_text = self.font_medium.render(gap_str, True, (255, 100, 100))
             else:
-                # Show gap to leader in laps if more than 1 lap
-                if car.gap_to_leader >= 1.0:
-                    laps_down = int(car.gap_to_leader)
-                    gap_str = f"+{laps_down}L"
-                    gap_text = self.font_medium.render(gap_str, True, (255, 100, 100))
-                else:
-                    gap_str = f"+{car.gap_to_ahead:.3f}"
-                    gap_text = self.font_medium.render(gap_str, True, config.TEXT_GRAY)
+                # Show time gap to car ahead (in seconds)
+                gap_str = f"+{car.gap_to_ahead_time:.3f}"
+                gap_text = self.font_medium.render(gap_str, True, config.TEXT_GRAY)
 
             self.timing_surface.blit(gap_text, (280, y_pos))
 

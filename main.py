@@ -60,6 +60,18 @@ class F1Manager:
                     self.race_engine = RaceEngine()
                     self.results_screen.reset_scroll()
 
+                # Speed control keys (1-5)
+                elif event.key == pygame.K_1:
+                    self.race_engine.set_simulation_speed(1)
+                elif event.key == pygame.K_2:
+                    self.race_engine.set_simulation_speed(2)
+                elif event.key == pygame.K_3:
+                    self.race_engine.set_simulation_speed(5)
+                elif event.key == pygame.K_4:
+                    self.race_engine.set_simulation_speed(10)
+                elif event.key == pygame.K_5:
+                    self.race_engine.set_simulation_speed(20)
+
                 # Pass scroll events to results screen if race is finished
                 elif self.race_engine.is_race_finished():
                     if event.key in (pygame.K_UP, pygame.K_DOWN):
@@ -69,6 +81,28 @@ class F1Manager:
             elif event.type == pygame.MOUSEWHEEL:
                 if self.race_engine.is_race_finished():
                     self.results_screen.handle_scroll(event)
+            
+            # Handle mouse clicks for speed buttons
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left click
+                    self._handle_speed_button_click(event.pos)
+
+    def _handle_speed_button_click(self, pos):
+        """Check if a speed button was clicked"""
+        x, y = pos
+        options = config.SIMULATION_SPEED_OPTIONS
+        button_width = 35
+        button_height = 25
+        margin = 5
+        start_x = config.TRACK_VIEW_WIDTH - (len(options) * (button_width + margin)) - 10
+        btn_y = 10
+        
+        if btn_y <= y <= btn_y + button_height:
+            for i, speed in enumerate(options):
+                btn_x = start_x + i * (button_width + margin)
+                if btn_x <= x <= btn_x + button_width:
+                    self.race_engine.set_simulation_speed(speed)
+                    break
 
     def update(self):
         """Update game state"""

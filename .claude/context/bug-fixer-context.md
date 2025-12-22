@@ -5,6 +5,27 @@ STATUS: IDLE
 
 ## Fixed Bugs
 
+### Starting grid formation - cars bunched in 3-wide packs
+- **Date:** 2025-12-22
+- **Problem:** At race start, cars were bunched up in packs of 3 side-by-side instead of proper F1 2-wide grid formation. After 1-2 laps it sorted itself out, but the start looked unrealistic.
+- **Root Cause:** In `_initialize_cars()`, the progress stagger was only `0.001 * (position - 1)`, giving just 0.001 progress gap per position. All 20 cars were within 0.019 progress of each other - way too close.
+- **Fix:** Implemented proper F1 grid formation:
+  - Row-based spacing: `row = (position - 1) // 2` gives 10 rows of 2 cars
+  - Progress stagger: `-0.015 * row` = ~1.2 seconds between rows
+  - Lateral offset: odd positions (1,3,5...) at -10 (left/pole side), even positions at +10 (right)
+  - Staggered grid: even positions get additional `-0.005` progress (slightly behind)
+  - Total spread: 9 rows × 0.015 = 0.135 progress = ~11 seconds from P1 to P20
+- **File:** race/race_engine.py:51-70 (`_initialize_cars` method)
+- **Impact:** Cars now start in realistic 2-wide formation with proper spacing
+
+### Simulation speed too fast - gaps don't match visual perception
+- **Date:** 2025-12-22
+- **Problem:** BASE_SPEED = 0.045 gave ~24 second laps. Gap displays (e.g., "+20s") didn't match what users visually perceived because cars were moving too fast.
+- **Root Cause:** Speed was tuned for fast gameplay but made gap calculations meaningless to users. A car 1/4 track ahead would show ~6 seconds gap but visually look much further.
+- **Fix:** Changed BASE_SPEED from 0.045 to 0.014 for ~80 second laps (realistic F1 lap time). Added SIMULATION_SPEED_DEFAULT and SIMULATION_SPEED_OPTIONS constants for future speed control UI.
+- **File:** config.py:25, 28-30
+- **Impact:** Gaps now match visual perception. A car 1/4 track ahead = ~20 seconds gap.
+
 ### Grass appearing on track surface (polygon fill issue)
 - **Date:** 2025-12-22
 - **Problem:** Grass (green) was appearing on top of the black track surface in several places, particularly at sharp corners

@@ -15,6 +15,18 @@ class TrackRenderer:
         self.surface = surface
         self.track_surface = pygame.Surface((config.TRACK_VIEW_WIDTH, config.SCREEN_HEIGHT))
         self.static_surface = None  # Cache for static track elements
+        
+        # Cache fonts for performance (avoid creating fonts every frame)
+        self.font_car_position = pygame.font.Font(None, 18)
+        self.font_large = pygame.font.Font(None, 48)
+        self.font_small = pygame.font.Font(None, 24)
+        self.font_instructions = pygame.font.Font(None, 28)
+        self.font_speed = pygame.font.Font(None, 20)
+        
+        # Speed control button dimensions
+        self.speed_button_width = 35
+        self.speed_button_height = 25
+        self.speed_button_margin = 5
 
     def render(self, race_engine):
         """Render the track and all cars"""
@@ -29,6 +41,9 @@ class TrackRenderer:
 
         # Draw race status
         self._draw_race_status(race_engine)
+        
+        # Draw speed controls
+        self._draw_speed_controls(race_engine)
 
         # Blit to main surface
         self.surface.blit(self.track_surface, (0, 0))
@@ -223,16 +238,17 @@ class TrackRenderer:
             )
 
     def _draw_cars(self, race_engine):
-        """Draw all cars on the track"""
+        """Draw all cars on the track with smooth motion"""
         for car in race_engine.cars:
-            x, y = car.get_position_on_track(race_engine.track)
+            # Use smoothed display position (no int() - pygame-ce supports floats)
+            x, y = car.get_display_position(race_engine.track)
             color = get_team_color(car.team)
 
             # Draw car shadow
             pygame.draw.circle(
                 self.track_surface,
                 (20, 20, 20),
-                (int(x) + 2, int(y) + 2),
+                (x + 2, y + 2),
                 config.CAR_SIZE
             )
 
@@ -240,7 +256,7 @@ class TrackRenderer:
             pygame.draw.circle(
                 self.track_surface,
                 color,
-                (int(x), int(y)),
+                (x, y),
                 config.CAR_SIZE
             )
 
@@ -248,24 +264,20 @@ class TrackRenderer:
             pygame.draw.circle(
                 self.track_surface,
                 (255, 255, 255),
-                (int(x), int(y)),
+                (x, y),
                 config.CAR_SIZE,
                 2
             )
 
             # Draw position number
-            font = pygame.font.Font(None, 18)
-            pos_text = font.render(str(car.position), True, (255, 255, 255))
-            text_rect = pos_text.get_rect(center=(int(x), int(y)))
+            pos_text = self.font_car_position.render(str(car.position), True, (255, 255, 255))
+            text_rect = pos_text.get_rect(center=(x, y))
             self.track_surface.blit(pos_text, text_rect)
 
     def _draw_race_status(self, race_engine):
         """Draw race status at top of track view"""
-        font_large = pygame.font.Font(None, 48)
-        font_small = pygame.font.Font(None, 24)
-
         # Race status (LAP X/Y)
-        status_text = font_large.render(
+        status_text = self.font_large.render(
             race_engine.get_race_status(),
             True,
             config.TEXT_COLOR
@@ -276,7 +288,7 @@ class TrackRenderer:
         # Race time
         minutes = int(race_engine.race_time // 60)
         seconds = int(race_engine.race_time % 60)
-        time_text = font_small.render(
+        time_text = self.font_small.render(
             f"{minutes:02d}:{seconds:02d}",
             True,
             config.TEXT_GRAY
@@ -286,8 +298,7 @@ class TrackRenderer:
 
         # Instructions at bottom
         if not race_engine.race_started:
-            inst_font = pygame.font.Font(None, 28)
-            inst_text = inst_font.render(
+            inst_text = self.font_instructions.render(
                 "Press SPACE to start race",
                 True,
                 config.TEXT_COLOR
@@ -296,3 +307,26 @@ class TrackRenderer:
                 center=(config.TRACK_VIEW_WIDTH // 2, config.SCREEN_HEIGHT - 40)
             )
             self.track_surface.blit(inst_text, inst_rect)
+
+    def _draw_speed_controls(self, race_engine):
+        """Draw speed control buttons in top right"""
+        options = config.SIMULATION_SPEED_OPTIONS
+        current_speed = race_engine.simulation_speed
+        
+        # Position in top right
+        start_x = config.TRACK_VIEW_WIDTH - (len(options) * (self.speed_button_width + self.speed_button_margin)) - 10
+        y = 10
+        
+        for i, speed in enumerate(options):
+            x = start_x + i * (self.speed_button_width + self.speed_button_margin)
+            
+            # Button background
+            is_active = (speed == current_speed)
+            bg_color = (0, 150, 0) if is_active else (60, 60, 60)
+            pygame.draw.rect(self.track_surface, bg_color, (x, y, self.speed_button_width, self.speed_button_height))
+            pygame.draw.rect(self.track_surface, (100, 100, 100), (x, y, self.speed_button_width, self.speed_button_height), 1)
+            
+            # Button text
+            text = self.font_speed.render(f"{speed}x", True, (255, 255, 255))
+            text_rect = text.get_rect(center=(x + self.speed_button_width // 2, y + self.speed_button_height // 2))
+            self.track_surface.blit(text, text_rect)

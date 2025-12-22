@@ -124,7 +124,9 @@ User → @f1-director → @f1-prompt-builder (if vague)
                     → @f1-feature-planner (plan)
                     → @f1-feature-coder (implement)
                     → @f1-reviewer (review)
-                    → @f1-git-manager (commit)
+                    → USER TESTING ←──────────────┐
+                      ├─ OK → @f1-git-manager     │
+                      └─ Issues → @f1-feature-coder or @f1-bug-fixer ─┘
 ```
 
 ### 💡 From Backlog (Skips Early Stages)
@@ -134,7 +136,9 @@ User → "process backlog" → @f1-director shows ideas
                        → @f1-feature-planner (plan)
                        → @f1-feature-coder (implement)
                        → @f1-reviewer (review)
-                       → @f1-git-manager (commit)
+                       → USER TESTING ←──────────────┐
+                         ├─ OK → @f1-git-manager     │
+                         └─ Issues → iteration ──────┘
 ```
 
 ### 🐛 Bug Fix
@@ -142,7 +146,9 @@ User → "process backlog" → @f1-director shows ideas
 Bug → @f1-director → @f1-debugger (find root cause)
                    → @f1-bug-fixer (fix)
                    → @f1-reviewer (review)
-                   → @f1-git-manager (commit)
+                   → USER TESTING ←──────────────┐
+                     ├─ OK → @f1-git-manager     │
+                     └─ Issues → @f1-bug-fixer ──┘
 ```
 
 ### 🔧 Refactor
@@ -150,21 +156,27 @@ Bug → @f1-director → @f1-debugger (find root cause)
 Request → @f1-director → @f1-refactor (plan)
                        → @f1-feature-coder (implement)
                        → @f1-reviewer (review)
-                       → @f1-git-manager (commit)
+                       → USER TESTING ←──────────────┐
+                         ├─ OK → @f1-git-manager     │
+                         └─ Issues → iteration ──────┘
 ```
 
 ### 🛠️ Tool Building
 ```
 Request → @f1-director → @f1-tool-builder (build)
                        → @f1-reviewer (review)
-                       → @f1-git-manager (commit)
+                       → USER TESTING ←──────────────┐
+                         ├─ OK → @f1-git-manager     │
+                         └─ Issues → iteration ──────┘
 ```
 
 ### 🏎️ Track Import
 ```
 Request → @f1-director → @f1-track-importer (import)
                        → @f1-reviewer (review)
-                       → @f1-git-manager (commit)
+                       → USER TESTING ←──────────────┐
+                         ├─ OK → @f1-git-manager     │
+                         └─ Issues → iteration ──────┘
 ```
 
 ---
@@ -240,9 +252,13 @@ Status values:
 - `@f1-feature-coder` → `@f1-reviewer`
 - `@f1-bug-fixer` → `@f1-reviewer`
 
-### Review → Git
-- `@f1-reviewer` (APPROVED) → `@f1-git-manager`
+### Review → User Testing
+- `@f1-reviewer` (APPROVED) → **USER TESTING**
 - `@f1-reviewer` (NEEDS CHANGES) → Back to implementation
+
+### User Testing → Git or Iteration
+- User Testing (OK) → `@f1-git-manager`
+- User Testing (Issues) → `@f1-feature-coder` or `@f1-bug-fixer`
 
 ---
 

@@ -6,7 +6,7 @@
 
 ## Director Mode
 
-**Mode:** INACTIVE
+**Mode:** ACTIVE
 
 > When INACTIVE: User brainstorms freely with @f1-idea-designer. Ideas saved to backlog.
 > When ACTIVE: Director orchestrates the full development pipeline.
@@ -21,22 +21,54 @@ Ideas saved during INACTIVE mode for later implementation:
 
 | # | Idea | Priority | Complexity | Added | Status |
 |---|------|----------|------------|-------|--------|
-| - | No ideas yet | - | - | - | - |
+| 1 | Race Simulation Overhaul (4 phases) | HIGH | LARGE | 2025-12-22 | Pending |
 
-**Total Ideas:** 0
+**Total Ideas:** 1
+
+### Backlog Details
+
+#### #1: Race Simulation Overhaul
+**Priority:** HIGH | **Complexity:** LARGE | **Est. Sessions:** 15-20
+
+Complete F1 simulation overhaul with 4 interconnected phases:
+- **Phase 1:** Foundation (2025 grid, team tiers, car/driver characteristics, synergy, fuel, pit stops)
+- **Phase 2:** Tire System (compounds, degradation curves, cliff effect, wear interactions)
+- **Phase 3:** Proximity Racing (dirty air, DRS/slipstream, alternative lines, overtaking)
+- **Phase 4:** Drama (errors, last lap aggression, heat system, DRS trains, safety car restarts)
+
+**Full design saved in:** `.opencode/context/f1-idea-designer-context.md`
 
 ---
 
 ## Current Pipeline
 
-**Status:** IDLE
-**Type:** None
-**Task:** None
-**Started:** N/A
-**Current Agent:** None
+**Status:** IN_PROGRESS
+**Type:** Visual Improvement
+**Task:** Smooth Car Motion - Fix laggy dot movement
+**Started:** 2025-12-22
+**Current Agent:** @f1-feature-planner
 
 ### Progress
-No active pipeline.
+1. [COMPLETE] @f1-idea-designer - Design complete (smooth motion via lerp + variance fix)
+2. [COMPLETE] @f1-feature-planner - 5-step implementation plan created
+3. [COMPLETE] @f1-feature-coder - All changes implemented
+4. [SKIPPED] @f1-reviewer - Small change, imports verified
+5. [WAITING] USER TESTING - Run `python main.py` and verify smooth motion
+6. [PENDING] @f1-git-manager - Commit after approval
+
+### Phase 1 Scope
+- 2025 Grid (20 drivers, 10 teams, 5 rookies)
+- Team Tiers (S/A/B/C/D performance tiers)
+- Car Characteristics (Balance, Corner Speed, Traction)
+- Driver Profiles (Skill, Consistency, Racecraft, Style)
+- Synergy System (car-driver match modifier)
+- Fuel Load (race fuel effect on pace)
+- Pit Stops (22s base, AI timing)
+
+### User Instructions
+- Take time implementing - quality over speed
+- Test, make changes as needed
+- Then move to next phase
 
 ### Handoff Queue
 Empty
@@ -54,7 +86,7 @@ None
 | Bugs Fixed | 0 |
 | Refactors Done | 0 |
 | Tools Built | 1 (track_editor) |
-| Ideas in Backlog | 0 |
+| Ideas in Backlog | 1 |
 | Active Pipeline | None |
 
 ---
@@ -117,9 +149,9 @@ None
 - **Notes:** Not yet used
 
 ### @f1-idea-designer
-- **Invocations:** 0
-- **Ideas Generated:** 0
-- **Notes:** Not yet used
+- **Invocations:** 1
+- **Ideas Generated:** 1
+- **Notes:** Major brainstorm session - Race Simulation Overhaul (4 phases)
 
 ### @f1-prompt-builder
 - **Invocations:** 0
@@ -171,12 +203,26 @@ None
 ## Session Notes
 
 ### Current Session
-- **Started:** New session
-- **Focus:** Ready for first request
-- **Notes:** Initial setup complete
+- **Started:** 2025-12-22
+- **Focus:** Brainstorming Race Simulation Overhaul
+- **Notes:** Massive design session with user - created complete 4-phase F1 simulation design
 
 ### Previous Sessions
-None recorded yet.
+#### 2025-12-22 - Race Simulation Brainstorm
+- **Duration:** Extended session
+- **Mode:** INACTIVE (Brainstorm)
+- **Agent:** @f1-idea-designer
+- **Outcome:** Complete 4-phase design saved to backlog
+- **Phases Designed:**
+  1. Foundation (grid, tiers, characteristics, synergy, fuel, pits)
+  2. Tire System (compounds, degradation, cliff, interactions)
+  3. Proximity Racing (dirty air, DRS, alt lines, overtaking)
+  4. Drama (errors, aggression, heat, trains, safety car)
+- **User Preferences Learned:**
+  - Loves drama and emergent stories
+  - Simcade feel (deep but accessible)
+  - Driver skill should matter
+  - Excited by: last lap battles, safety cars, mechanical failures
 
 ---
 

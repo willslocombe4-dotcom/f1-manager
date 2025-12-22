@@ -1,6 +1,6 @@
 # Feature Coder Context
 
-Last updated: 2025-12-21
+Last updated: 2025-12-22
 STATUS: IDLE
 
 ## Currently Implementing
@@ -8,6 +8,19 @@ STATUS: IDLE
 *Nothing in progress*
 
 ## Recently Completed
+
+- Speed Control UI (2025-12-22)
+  - Added simulation speed state to RaceEngine (simulation_speed property)
+  - Added set_simulation_speed() and cycle_speed() methods to RaceEngine
+  - Modified RaceEngine.update() to apply speed multiplier to dt and race_time
+  - Added speed control buttons (1x, 2x, 5x, 10x, 20x) in top-right of track view
+  - Added keyboard shortcuts (1-5 keys) to change speed
+  - Added mouse click support for speed buttons
+  - Current speed highlighted with green background
+  - Files modified: race/race_engine.py, ui/renderer.py, main.py
+  - Config already had: SIMULATION_SPEED_DEFAULT, SIMULATION_SPEED_OPTIONS
+  - Implementation confidence: HIGH (95%)
+  - Testing: Import successful, speed methods work correctly
 
 - Enhanced Track Visuals (2025-12-21)
   - Added two-tone grass background with random patches
@@ -97,6 +110,8 @@ Run with: `python main.py`
 Controls:
 - SPACE: Start race / Pause / New race (after finish)
 - R: Restart race
+- 1-5 keys: Set simulation speed (1x, 2x, 5x, 10x, 20x)
+- Click speed buttons: Change simulation speed
 - UP/DOWN arrows: Scroll results (when race finished)
 - Mouse wheel: Scroll results (when race finished)
 - ESC: Quit

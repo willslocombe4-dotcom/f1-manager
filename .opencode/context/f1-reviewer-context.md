@@ -1,6 +1,6 @@
 # F1 Reviewer Context
 
-**Last Updated:** Not yet used
+**Last Updated:** Mon Dec 22 2025
 
 ---
 
@@ -8,11 +8,11 @@
 
 | Metric | Value |
 |--------|-------|
-| Total Reviews | 0 |
+| Total Reviews | 2 |
 | Approved | 0 |
-| Needs Changes | 0 |
+| Needs Changes | 2 |
 | Blocked | 0 |
-| Issues Found | 0 |
+| Issues Found | 5 |
 
 ---
 
@@ -20,7 +20,8 @@
 
 | Date | Type | Files | Verdict | Issues | Notes |
 |------|------|-------|---------|--------|-------|
-| - | - | - | - | - | No reviews yet |
+| Dec 22 | Bug Fix | config.py, race/car.py, race/race_engine.py | NEEDS CHANGES 🔄 | 2 | Gap Logic Bug. Simulation speed too fast. |
+| Dec 22 | Feature | config.py, data/teams.py, assets/colors.py, race/car.py, race/race_engine.py, ui/renderer.py | NEEDS CHANGES 🔄 | 3 | Phase 1 Foundation. Critical font performance issue. |
 
 ---
 
@@ -29,14 +30,16 @@
 ### By Category
 | Category | Count | Last Seen |
 |----------|-------|-----------|
-| Pygame Performance | 0 | - |
-| Hardcoded Values | 0 | - |
+| Pygame Performance | 1 | Dec 22 |
+| Hardcoded Values | 1 | Dec 22 |
+| Simulation Logic | 1 | Dec 22 |
 | Pattern Violations | 0 | - |
-| Logic Errors | 0 | - |
 | F1 Accuracy | 0 | - |
 
 ### Issue Log
-None recorded yet.
+- **Dec 22**: `config.py` `BASE_SPEED` set too high (0.25), causing 4s laps and tiny time gaps (Critical).
+- **Dec 22**: `ui/renderer.py` creating `pygame.font.Font` inside render loop (Critical).
+- **Dec 22**: `race/car.py` using hardcoded magic numbers for physics (Major).
 
 ---
 
@@ -45,12 +48,15 @@ None recorded yet.
 ### Files That Need Attention
 | File | Issue | Priority | Notes |
 |------|-------|----------|-------|
-| - | None identified | - | - |
+| `config.py` | Incorrect simulation constants | Critical | Fixes gap display bug |
+| `ui/renderer.py` | Font creation in loop | Critical | Must fix before merge |
+| `race/car.py` | Hardcoded physics constants | Major | Should move to config |
 
 ### Known Technical Debt
 | Area | Description | Impact |
 |------|-------------|--------|
-| - | None tracked | - |
+| Physics | High frequency variance (60Hz) | Jittery movement |
+| Time Scale | Simulation runs at ~20x speed | Confusing for users expecting real-time |
 
 ### Good Patterns to Preserve
 | Pattern | Where | Why It's Good |
@@ -75,6 +81,7 @@ None recorded yet.
 | Car progress | progress = 1.0 exactly | Wraps to 0.0, lap increments |
 | Race end | leader.lap > total_laps | is_race_finished() returns True |
 | Position calc | Two cars same progress | lateral_offset separates visually |
+| Gap Display | Fast simulation speed | Ensure time gaps match visual expectations |
 
 ---
 
@@ -126,7 +133,8 @@ Good work, minor issues to address.
 ## Session Notes
 
 ### Current Session
-Not yet started.
+Investigated Gap Logic Bug. Found that `BASE_SPEED` was set to 0.25, resulting in 4.33s laps. This caused time gaps to be ~20x smaller than visually expected. Recommended reducing `BASE_SPEED` to 0.045 and adjusting pit stop times.
 
 ### Observations
-(To be populated during reviews)
+- The 2025 grid data is very detailed and accurate.
+- The physics model is robust but needs tuning constants extracted.

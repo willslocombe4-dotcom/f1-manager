@@ -22,8 +22,13 @@ TRACK_WIDTH = TRACK_OUTER_RADIUS - TRACK_INNER_RADIUS
 # Car settings
 CAR_SIZE = 12
 CAR_SPACING = 25  # Minimum distance between cars on same position
-BASE_SPEED = 0.25  # Base speed in pixels per frame (adjusted for realistic lap times)
+BASE_SPEED = 0.014  # Base speed - ~80 second lap times (realistic F1)
 SPEED_VARIANCE = 0.3  # Speed variation between cars
+CAR_SMOOTHING = 0.15  # Lerp factor for smooth car movement (0.1 = smooth, 0.3 = responsive)
+
+# Simulation Speed Control
+SIMULATION_SPEED_DEFAULT = 1.0  # 1x = real-time (~80 second laps)
+SIMULATION_SPEED_OPTIONS = [1, 2, 5, 10, 20]  # Available speed multipliers
 
 # Race settings
 NUM_CARS = 20
@@ -65,3 +70,78 @@ GRAVEL_BORDER_COLOR = (170, 155, 110)
 KERB_RED = (200, 0, 0)
 KERB_WHITE = (255, 255, 255)
 KERB_WIDTH = 8  # Width of kerb stripes
+
+# =============================================================================
+# PHASE 1: RACE SIMULATION PHYSICS
+# =============================================================================
+
+# Team Performance Tiers
+# S-Tier: Championship contenders, A-Tier: Podium fighters, etc.
+TIER_MODIFIERS = {
+    "S": 1.04,   # +4% pace (Red Bull, McLaren)
+    "A": 1.02,   # +2% pace (Ferrari, Mercedes)
+    "B": 1.00,   # Baseline (Aston Martin, Williams)
+    "C": 0.98,   # -2% pace (RB, Alpine, Haas)
+    "D": 0.95,   # -5% pace (Sauber)
+}
+
+# Fuel System
+# Cars start heavy (full fuel) and get lighter (faster) each lap
+FUEL_START_PENALTY = 0.04      # -4% pace at race start (full fuel)
+FUEL_BURN_PER_LAP = 0.002      # +0.2% pace gained per lap (fuel burn)
+
+# Tire Degradation
+# Each compound has different degradation rate and lifespan
+TIRE_DEG_RATES = {
+    TIRE_SOFT: 0.004,    # 0.4% pace loss per lap
+    TIRE_MEDIUM: 0.002,  # 0.2% pace loss per lap
+    TIRE_HARD: 0.001,    # 0.1% pace loss per lap
+}
+
+TIRE_CLIFF_LAPS = {
+    TIRE_SOFT: 12,       # Performance cliff after 12 laps
+    TIRE_MEDIUM: 20,     # Performance cliff after 20 laps
+    TIRE_HARD: 30,       # Performance cliff after 30 laps
+}
+
+TIRE_CLIFF_PENALTY = 0.10  # -10% pace after hitting tire cliff
+
+# Pit Stops
+PIT_STOP_BASE_TIME = 4.0       # Base pit stop time in seconds (proportional to new lap time)
+PIT_STOP_VARIANCE = 1.0        # Random variance ±1 second
+
+# Synergy System
+# How well driver style matches car characteristics
+SYNERGY_MODIFIERS = {
+    "high": 1.02,      # +2% pace (great match)
+    "neutral": 1.00,   # No modifier
+    "low": 0.98,       # -2% pace (poor match)
+}
+
+# Driver Style to Car Characteristic Matching
+# Aggressive drivers prefer high traction, Smooth prefer balance
+STYLE_PREFERENCES = {
+    "aggressive": {"traction": 4, "balance": 0},   # Wants high traction
+    "smooth": {"traction": 2, "balance": 1},       # Wants balanced car
+    "adaptive": {"traction": 3, "balance": 0},     # Flexible
+}
+
+# Random pace variance per lap (simulates driver inconsistency)
+LAP_VARIANCE_BASE = 0.005  # ±0.5% base variance
+
+# Driver Skill Normalization
+# Maps skill range (70-99) to a multiplier range (0.85-1.00)
+SKILL_MIN = 70              # Minimum possible skill value
+SKILL_MAX = 99              # Maximum possible skill value
+SKILL_MIN_FACTOR = 0.85     # Multiplier for minimum skill
+SKILL_FACTOR_RANGE = 0.15   # Range of skill multiplier (1.00 - 0.85)
+
+# Tire Penalty Cap
+MAX_TIRE_PENALTY = 0.20     # Maximum tire degradation penalty (20%)
+
+# Pit Stop Strategy
+PIT_WINDOW_LAPS = 2         # Laps before cliff where early pit is possible
+PIT_CHANCE_AFTER_CLIFF = 0.8  # 80% chance to pit each lap after cliff
+PIT_CHANCE_NEAR_CLIFF = 0.3   # 30% chance to pit when near cliff
+PIT_SPEED_PENALTY = 0.3       # Speed multiplier during pit (30% of normal)
+LAST_LAPS_NO_PIT = 3          # Don't pit in last N laps

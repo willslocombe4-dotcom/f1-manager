@@ -1,187 +1,192 @@
-# F1 Onboarding Context
+# Feature Briefing: Race Simulation Overhaul - Phase 1: Foundation
 
-**Last Updated:** Not yet used
-
----
-
-## Briefing Statistics
-
-| Metric | Value |
-|--------|-------|
-| Total Briefings | 0 |
-| Avg Complexity | N/A |
-| Files Analyzed | 0 |
+**Prepared by:** @f1-onboarding
+**Date:** 2025-12-22
+**For:** @f1-feature-planner
 
 ---
 
-## Recent Briefings
+## Feature Overview
 
-| Date | Feature | Complexity | Files | Outcome |
-|------|---------|------------|-------|---------|
-| - | - | - | - | No briefings yet |
+### What It Does
+Establishes the core simulation physics and data for the 2025 season. It replaces the current random speed logic with a deterministic yet dynamic system based on:
+1.  **2025 Grid**: Real teams/drivers with performance tiers.
+2.  **Physics**: Fuel load, tire degradation, and car characteristics.
+3.  **Driver Skills**: Individual stats affecting pace and consistency.
+4.  **Synergy**: Bonus/penalty for driver-car fit.
+
+### User Interaction
+- **Visuals**: Players will see realistic gaps forming based on car performance (Red Bull pulling away, Alpine fighting in midfield).
+- **Timing Screen**: Will reflect tire strategies and pace evolution as fuel burns.
+- **No direct control** in this phase, but the simulation becomes "watchable" and strategic.
+
+### F1 Context
+Reflects the 2025 season dynamics:
+- **Rookies**: Antonelli (Merc), Doohan (Alpine), Hadjar (RB), Bearman (Haas), Bortoleto (Sauber).
+- **Team Tiers**: Distinct performance gaps (S-Tier to D-Tier).
 
 ---
 
-## Codebase Knowledge Base
+## Codebase Analysis
 
-### Architecture Understanding
+### Architecture Summary
+The current system is simple:
+- `data/teams.py` holds a basic list of 2024 drivers.
+- `race/car.py` calculates speed once at spawn: `BASE_SPEED` + random variance + grid position bonus.
+- `race/race_engine.py` moves cars linearly.
 
-#### Main Loop (main.py)
-```
-F1Manager class:
-- __init__: Creates RaceEngine, TrackRenderer, TimingScreen, ResultsScreen
-- handle_events: SPACE=start/pause, R=restart, ESC=quit
-- update: Calls race_engine.update() if running
-- render: Draws track OR results screen
-- run: 60 FPS game loop
-```
+**We need to shift from "Spawn Speed" to "Per-Frame Dynamic Speed".**
 
-#### Race Engine (race/race_engine.py)
-```
-RaceEngine class:
-- __init__: Creates Track, shuffles grid, creates 20 Cars
-- update: Moves all cars, sorts by position, calculates gaps
-- get_cars_by_position: Returns sorted car list
-- is_race_finished: leader.lap > total_laps
-```
+### Relevant Files
 
-#### Car State (race/car.py)
-```
-Car class:
-- Position tracking: progress (0-1), lap (int), position (1-20)
-- Performance: speed (varies), tire_compound, tire_age
-- Timing: gap_to_leader, gap_to_ahead, lap_time, best_lap_time
-- Visual: lateral_offset (for side-by-side)
-- update(): Moves car, handles lap completion, tire degradation
-```
+| File | Purpose | Relevance to Feature |
+|------|---------|---------------------|
+| `data/teams.py` | Static data source | **CRITICAL**: Needs complete replacement with 2025 grid & stats. |
+| `race/car.py` | Car logic | **CRITICAL**: Needs new `update_speed()` logic using the new formula. |
+| `config.py` | Constants | **HIGH**: Needs new physics constants (fuel weights, tier modifiers). |
+| `race/race_engine.py` | Simulation loop | **MEDIUM**: Needs to pass new data to Car init. |
+| `assets/colors.py` | Visuals | **LOW**: Update for Sauber/RB/Alpine colors. |
 
-#### Track Geometry (race/track.py)
-```
-Track class:
-- waypoints: List of (x,y) tuples forming racing line
-- get_position(progress): 0-1 progress → (x,y) screen coords
-- get_angle(progress): Direction at that point
-- get_offset_position(progress, offset): For side-by-side positioning
-- get_track_boundaries(width): Returns outer/inner edge points
-```
+### Key Code Sections
 
-### Common Patterns
-
-#### Surface Caching
+#### Current Speed Logic (to be replaced)
 ```python
-# Pattern from ui/renderer.py
-class SomeRenderer:
-    def __init__(self, surface):
-        self.surface = surface
-        self.cached_surface = pygame.Surface((w, h))  # Create ONCE
-        self.static_surface = None  # Lazy init for complex static content
+# race/car.py:24
+base_speed = config.BASE_SPEED
+speed_modifier = 1.0 + (random.random() * config.SPEED_VARIANCE - config.SPEED_VARIANCE / 2)
+position_modifier = 1.0 - (starting_position - 1) * 0.01
+self.speed = base_speed * speed_modifier * position_modifier
 ```
+**Why this matters:** This static speed must be replaced by a dynamic property that changes every frame (or lap) based on fuel and tires.
 
-#### Config Usage
+#### Data Structure (to be expanded)
 ```python
-# Pattern everywhere
-import config
-# or
-from config import SPECIFIC_VALUE
+# data/teams.py:5
+TEAMS_DATA = [
+    {
+        "name": "Red Bull Racing",
+        "drivers": [...]
+    }
+]
 ```
+**Why this matters:** This structure is too simple. We need to add `tier`, `characteristics` to teams, and `skill`, `consistency`, `style` to drivers.
 
-#### Reading Race State
+---
+
+## Integration Points
+
+### 1. Data Layer (`data/teams.py`)
+**Action:** Replace `TEAMS_DATA` with a richer structure.
+
+**Recommended Structure:**
 ```python
-# Pattern from UI components
-def render(self, race_engine):
-    cars = race_engine.get_cars_by_position()
-    leader = race_engine.get_leader()
-    status = race_engine.get_race_status()
+TEAMS_2025 = [
+    {
+        "name": "Red Bull Racing",
+        "tier": "S",
+        "characteristics": {"balance": 2, "cornering": 1, "traction": 5},
+        "drivers": [
+            {"name": "Max Verstappen", "skill": 99, "consistency": 5, "style": "aggressive"},
+            ...
+        ]
+    },
+    ...
+]
+```
+
+### 2. Configuration (`config.py`)
+**Action:** Add physics constants.
+
+```python
+# Physics
+FUEL_START_PENALTY = 0.04  # -4% speed at start
+FUEL_BURN_PER_LAP = 0.002  # +0.2% speed per lap
+TIER_MODIFIERS = {
+    "S": 1.04, "A": 1.02, "B": 1.00, "C": 0.98, "D": 0.95
+}
+PIT_STOP_BASE_TIME = 22.0
+```
+
+### 3. Car Physics (`race/car.py`)
+**Action:** Rewrite `__init__` and `update`.
+
+**New Attributes:**
+- `self.fuel_load` (starts at 1.0, decreases)
+- `self.base_performance` (calculated from Tier + Car Stats)
+- `self.driver_factor` (Skill + Synergy)
+
+**New Method `_calculate_current_pace()`:**
+```python
+def _calculate_current_pace(self):
+    # 1. Base Car Pace (Tier)
+    pace = config.BASE_SPEED * config.TIER_MODIFIERS[self.team_tier]
+    
+    # 2. Driver Skill (0.70 to 0.99 factor)
+    pace *= (self.driver_skill / 100.0)
+    
+    # 3. Synergy (±2-4%)
+    pace *= self.synergy_factor
+    
+    # 4. Fuel (Linear penalty removal)
+    fuel_penalty = self.current_fuel * config.FUEL_START_PENALTY
+    pace *= (1.0 - fuel_penalty)
+    
+    # 5. Tires (Degradation)
+    tire_deg = self.tire_age * config.TIRE_DEG_PER_LAP
+    pace *= (1.0 - tire_deg)
+    
+    return pace
 ```
 
 ---
 
-## Integration Point Map
+## Patterns to Follow
 
-### Adding New Visual Element
-1. Create new class in `ui/` or add method to existing renderer
-2. Initialize any surfaces in `__init__`
-3. Add render call in `F1Manager.render()`
-4. Pass `race_engine` for data access
+### Data Access
+Keep data in `data/` modules. Do not hardcode stats in `car.py`.
 
-### Adding New Car State
-1. Add property to `Car.__init__`
-2. Update in `Car.update()` or `RaceEngine.update()`
-3. Access from UI via `race_engine.get_cars_by_position()`
+### Config Usage
+All "magic numbers" (burn rate, tier gaps) must go in `config.py` for easy balancing later.
 
-### Adding New Config Value
-1. Add constant to `config.py`
-2. Import where needed
-3. Never hardcode values in other files
-
-### Adding New Data
-1. Add to appropriate file in `data/`
-2. Create accessor function if complex
-3. Import where needed
+### State Management
+The `Car` class should own its state. `RaceEngine` should only call `car.update()`.
 
 ---
 
-## File Dependencies
+## Edge Cases to Consider
 
-```
-main.py
-├── config
-├── race/race_engine (RaceEngine)
-├── ui/renderer (TrackRenderer)
-├── ui/timing_screen (TimingScreen)
-└── ui/results_screen (ResultsScreen)
-
-race/race_engine.py
-├── config
-├── race/track (Track)
-├── race/car (Car)
-└── data/teams (TEAMS_DATA)
-
-race/car.py
-├── config
-
-race/track.py
-├── config
-
-ui/renderer.py
-├── config
-├── assets/colors (get_team_color)
-
-ui/timing_screen.py
-├── config
-├── assets/colors (get_team_color, get_team_short_name)
-
-ui/results_screen.py
-├── config
-├── assets/colors (get_team_color, get_team_short_name)
-```
+| Scenario | How to Handle |
+|----------|---------------|
+| **Pit Stops** | When `tire_age` > threshold, car stops moving for `PIT_STOP_TIME` frames. |
+| **Lapped Cars** | The logic already handles position by `total_progress`. Ensure pace formula doesn't break this. |
+| **Zero Fuel** | Fuel shouldn't reach 0 (it's a modifier, not a tank). Just ensure it stops burning at 0%. |
 
 ---
 
-## Tricky Areas
+## Testing Scenarios
 
-### Car Positioning
-- `progress` is 0.0 to 1.0 around track
-- When progress >= 1.0, wraps to 0.0 and lap++
-- `lateral_offset` used for side-by-side visual separation
-- Total progress for sorting = (lap - 1) + progress
-
-### Gap Calculations
-- `gap_to_leader`: Total progress difference
-- `gap_to_ahead`: Progress difference to car in front
-- Displayed as time estimate or lap count (+1L, +2L)
-
-### Race State Machine
-- `race_started = False` → "READY" state
-- `race_started = True, !finished` → Racing
-- `leader.lap > total_laps` → "FINISHED" state
+1.  **Tier Check**: Verify Red Bull (Tier S) is consistently faster than Sauber (Tier D) over 1 lap.
+2.  **Fuel Burn**: Verify lap times improve slightly each lap (ignoring tire wear).
+3.  **Synergy**: Create two identical cars/drivers, give one +Synergy and one -Synergy. Verify the gap.
+4.  **Rookie Check**: Ensure all 5 rookies appear on the grid.
 
 ---
 
-## Session Notes
+## Estimated Complexity
 
-### Current Session
-Not yet started.
+**Level:** Medium
+**Reasoning:** The logic isn't complex, but it touches the core movement loop and requires a full data rewrite.
+**Estimated Files Changed:** 4 (`teams.py`, `config.py`, `car.py`, `colors.py`)
 
-### Areas to Explore
-(Will be populated during briefing work)
+---
+
+## Handoff
+
+This briefing is ready for @f1-feature-planner.
+
+### Key Decisions Needed
+- **Pit Logic**: Should we implement actual pit stops (car stops on track) or just add time to the lap? *Recommendation: For Phase 1, just add time to `self.lap_time` and reset tires.*
+- **Synergy Calculation**: How is it determined? *Recommendation: Random assignment at start (High/Neutral/Low) for now, or based on "Style" match.*
+
+### Open Questions
+- None. The requirements are clear.

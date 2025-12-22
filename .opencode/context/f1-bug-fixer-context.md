@@ -1,6 +1,6 @@
 # F1 Bug Fixer Context
 
-**Last Updated:** Not yet used
+**Last Updated:** 2025-12-22
 
 ---
 
@@ -8,10 +8,10 @@
 
 | Metric | Value |
 |--------|-------|
-| Bugs Fixed | 0 |
-| First-Try Success | 0 |
+| Bugs Fixed | 1 |
+| First-Try Success | 1 |
 | Required Revision | 0 |
-| Lines Changed | 0 |
+| Lines Changed | 15 |
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Date | Bug | File:Line | Fix Applied | Testing | Notes |
 |------|-----|-----------|-------------|---------|-------|
-| - | - | - | - | - | No fixes yet |
+| 2025-12-22 | Gap display in progress units instead of seconds | car.py:68-69, race_engine.py:70-91, timing_screen.py:100-111 | Added time-based gap attributes, calculate time gaps from progress gaps, display time gaps | Syntax check passed | Unit conversion fix |
 
 ---
 
@@ -32,8 +32,9 @@
 | Null check | 0 | - |
 | Wrap-around | 0 | - |
 | State reset | 0 | - |
-| Type conversion | 0 | - |
+| Type conversion | 1 | 2025-12-22 |
 | Surface caching | 0 | - |
+| Unit conversion | 1 | 2025-12-22 |
 
 ---
 
@@ -41,7 +42,9 @@
 
 | File | Fixes | Common Issues |
 |------|-------|---------------|
-| - | 0 | No data yet |
+| race/car.py | 1 | Gap attributes |
+| race/race_engine.py | 1 | Gap calculations |
+| ui/timing_screen.py | 1 | Gap display |
 
 ---
 
@@ -103,17 +106,28 @@ from config import SCREEN_WIDTH, CAR_SIZE
 None
 
 ### Pending Review
-None
+Gap time display fix - awaiting @f1-reviewer
 
 ### Recently Completed
-None
+Gap time display fix (2025-12-22)
 
 ---
 
 ## Session Notes
 
 ### Current Session
-Not yet started.
+2025-12-22: Fixed gap display bug where progress units (0.0-1.0 per lap) were displayed directly as seconds.
+
+### Fix Details
+**Root Cause:** Gaps calculated in progress units but displayed as if they were seconds.
+- 1 lap of progress = ~4.33 seconds
+- A 1-second gap was showing as "+0.230" instead of "+1.000"
+
+**Solution:**
+1. Added `gap_to_leader_time` and `gap_to_ahead_time` attributes to Car class
+2. Calculate `seconds_per_lap` from track length and base speed
+3. Convert progress gaps to time gaps: `time_gap = progress_gap * seconds_per_lap`
+4. Display time gaps in timing screen, keep progress-based LAPPED check
 
 ### In Progress
 None.
