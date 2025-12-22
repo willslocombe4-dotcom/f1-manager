@@ -1,9 +1,24 @@
 # Bug Fixer Context
 
-Last updated: 2024-12-21
+Last updated: 2025-12-22
 STATUS: IDLE
 
 ## Fixed Bugs
+
+### Grass appearing on track surface (polygon fill issue)
+- **Date:** 2025-12-22
+- **Problem:** Grass (green) was appearing on top of the black track surface in several places, particularly at sharp corners
+- **Root Cause:** The track surface was drawn as a SINGLE complex polygon by concatenating `outer_points + inner_points[::-1]`. At sharp corners (specifically indices 51-54), the inner boundary had self-intersections where boundary segments crossed over each other. Pygame's polygon fill algorithm uses the even-odd rule, which leaves gaps unfilled when the polygon self-intersects.
+- **Fix:** Changed from drawing a single complex polygon to drawing individual quadrilateral segments. For each segment between waypoints, a quad is drawn using `[outer[i], outer[i+1], inner[i+1], inner[i]]`. This avoids self-intersection issues entirely and guarantees complete track coverage.
+- **File:** ui/renderer.py:80-98 (LAYER 3: Track surface)
+- **Related:** Previous gravel fix was not the cause; this was a separate issue with the track polygon itself
+
+### Gravel traps overlapping track surface
+- **Date:** 2025-12-22
+- **Problem:** Gravel/sand runoff areas were appearing ON TOP of the track surface
+- **Cause:** `_draw_gravel_trap()` created a polygon using only the extended gravel outer points. This formed an arc shape that, when filled as a polygon, could bleed across the track surface because it wasn't bounded by the track edge.
+- **Fix:** Changed gravel trap to be a proper band/strip shape. Now collects both outer points (gravel outer edge) and inner points (track outer edge), then creates a closed polygon: `gravel_outer_points + gravel_inner_points[::-1]`. This ensures gravel only fills the area BETWEEN the track edge and the gravel outer boundary.
+- **File:** ui/renderer.py:108-145
 
 ### Track was oval instead of F1 circuit
 - **Date:** 2024-12-21
@@ -27,6 +42,12 @@ STATUS: IDLE
 - **File:** main.py
 
 ## Known Fragile Areas
+
+### Track Boundary Polygon Rendering (CRITICAL)
+- NEVER draw track as a single complex polygon using `outer_points + inner_points[::-1]`
+- Sharp corners cause boundary self-intersections which create gaps in polygon fill
+- ALWAYS draw track as individual segment quads: `[outer[i], outer[i+1], inner[i+1], inner[i]]`
+- Same issue can affect gravel traps at sharp corners
 
 ### Track Waypoints
 - Waypoints must form closed loop

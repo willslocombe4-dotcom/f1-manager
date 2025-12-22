@@ -78,9 +78,20 @@ class TrackRenderer:
             self._draw_gravel_trap(surface, waypoints, outer_points, corner_idx, track_width)
 
         # LAYER 3: Track surface
+        # Draw track as individual segments to avoid polygon fill issues
+        # at sharp corners where boundaries may self-intersect
         if len(outer_points) >= 3 and len(inner_points) >= 3:
-            track_polygon = outer_points + inner_points[::-1]
-            pygame.draw.polygon(surface, config.TRACK_COLOR, track_polygon)
+            num_points = len(outer_points)
+            for i in range(num_points):
+                next_i = (i + 1) % num_points
+                # Create a quad for each track segment
+                segment_quad = [
+                    outer_points[i],
+                    outer_points[next_i],
+                    inner_points[next_i],
+                    inner_points[i]
+                ]
+                pygame.draw.polygon(surface, config.TRACK_COLOR, segment_quad)
 
             # Track edges (white lines)
             pygame.draw.lines(surface, (200, 200, 200), True, outer_points, 2)
@@ -107,7 +118,8 @@ class TrackRenderer:
 
     def _draw_gravel_trap(self, surface, waypoints, outer_points, corner_idx, track_width):
         """Draw gravel trap on outside of corner"""
-        gravel_points = []
+        gravel_outer_points = []  # Extended points (outer edge of gravel)
+        gravel_inner_points = []  # Track outer edge (inner edge of gravel)
         extend_range = 4  # Waypoints before/after corner
 
         for offset in range(-extend_range, extend_range + 1):
@@ -124,17 +136,24 @@ class TrackRenderer:
                 length = math.sqrt(dx * dx + dy * dy)
 
                 if length > 0:
-                    # Extend 25 pixels beyond outer edge
+                    # Store the track outer edge point (inner boundary of gravel)
+                    gravel_inner_points.append((ox, oy))
+
+                    # Extend 25 pixels beyond outer edge for gravel outer boundary
                     extension = 25
                     gravel_x = ox + (dx / length) * extension
                     gravel_y = oy + (dy / length) * extension
-                    gravel_points.append((gravel_x, gravel_y))
+                    gravel_outer_points.append((gravel_x, gravel_y))
 
-        if len(gravel_points) >= 3:
+        if len(gravel_outer_points) >= 3 and len(gravel_inner_points) >= 3:
+            # Create closed polygon: outer edge forward, then inner edge backward
+            # This creates a band/strip shape between track edge and gravel outer edge
+            gravel_polygon = gravel_outer_points + gravel_inner_points[::-1]
+
             # Draw gravel fill
-            pygame.draw.polygon(surface, config.GRAVEL_COLOR, gravel_points)
-            # Draw border
-            pygame.draw.lines(surface, config.GRAVEL_BORDER_COLOR, False, gravel_points, 3)
+            pygame.draw.polygon(surface, config.GRAVEL_COLOR, gravel_polygon)
+            # Draw border only on outer edge
+            pygame.draw.lines(surface, config.GRAVEL_BORDER_COLOR, False, gravel_outer_points, 3)
 
     def _draw_kerbs(self, surface, waypoints, inner_points, corner_idx):
         """Draw red and white striped kerbs at corner"""
