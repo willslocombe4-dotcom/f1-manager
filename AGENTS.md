@@ -1,264 +1,142 @@
 # F1 Manager Agent System
 
-A multi-agent development pipeline for the F1 Manager game. Agents collaborate to implement features, fix bugs, and maintain code quality.
+A streamlined multi-agent development pipeline for the F1 Manager game. **8 agents** (down from 14) with clear responsibilities.
 
 ---
 
 ## Quick Start
 
-| I want to... | Start with |
-|--------------|------------|
-| **Brainstorm freely** | `@f1-idea-designer` (Director stays INACTIVE) |
-| **Build a feature** | "activate director" → `@f1-director` routes to pipeline |
-| **Build from backlog** | "activate director" → "process backlog" |
-| Fix a bug | `@f1-director` → routes to `@f1-debugger` |
-| Refactor code | `@f1-director` → routes to `@f1-refactor` |
-| Create a track | `python tools/track_editor.py` |
-| Check status | `.opencode/context/f1-director-context.md` |
-
----
-
-## Brainstorm Mode (NEW!)
-
-The Director has two modes: **INACTIVE** (default) and **ACTIVE**.
-
-### INACTIVE Mode (Brainstorm)
-
-```
-You ↔ @f1-idea-designer (free exploration) → Ideas saved to backlog
-```
-
-- **Director is dormant** - no pipeline orchestration
-- Chat freely with `@f1-idea-designer`
-- Explore ideas without commitment
-- Approved designs saved to backlog for later
-
-**Perfect for:** "I have some ideas but I'm not ready to build yet"
-
-### ACTIVE Mode (Build)
-
-```
-You → @f1-director → Full pipeline → Working code
-```
-
-- **Director orchestrates everything**
-- Routes to correct agents
-- Manages the full implementation pipeline
-- Can process ideas from the backlog
-
-**Perfect for:** "Let's actually build something"
-
-### Mode Commands
-
-| Say This | Result |
-|----------|--------|
-| "activate director" | Switch to ACTIVE mode |
-| "deactivate director" | Switch to INACTIVE mode |
-| "brainstorm mode" | Switch to INACTIVE mode |
-| "build mode" | Switch to ACTIVE mode |
-| "process backlog" | ACTIVE + show saved ideas |
-
-### Typical Workflow
-
-```
-1. Brainstorm Phase (INACTIVE)
-   You ↔ @f1-idea-designer
-   "Save this" → Added to backlog
-   "Let's explore another idea..."
-   ↔ More brainstorming
-   
-2. Build Phase (ACTIVE)
-   "activate director"
-   "process backlog"
-   → Pick idea #2
-   → Full pipeline runs
-   → Feature implemented!
-   
-3. Back to Brainstorming
-   "deactivate director"
-   ↔ More ideas...
-```
+| I want to... | Do this |
+|--------------|---------|
+| **Brainstorm features** | Tab to `@f1-designer` |
+| **Build a feature** | Tab to `@f1-director` → "build [feature]" |
+| **Build from backlog** | Tab to `@f1-director` → "process backlog" |
+| **Design a tool** | Tab to `@f1-tool-designer` |
+| **Create a track** | `python tools/track_editor.py` |
 
 ---
 
 ## Agent Overview
 
-### 🎯 Director (Orchestration)
+### Primary Agents (Tab to switch)
+
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| `@f1-director` | Claude Opus | Routes tasks, tracks pipeline, coordinates handoffs |
+| `@f1-designer` | Gemini | Brainstorms game features, codebase-aware |
+| `@f1-director` | Gemini | Orchestrates build pipeline |
+| `@f1-tool-designer` | Gemini | Designs dev tools |
 
-### 🔍 Analysis Agents (Gemini 3 Pro - 2M context)
-| Agent | Purpose | Produces |
-|-------|---------|----------|
-| `@f1-reviewer` | Code review | Approval / change requests |
-| `@f1-onboarding` | Feature briefings | Codebase analysis for new features |
-| `@f1-debugger` | Bug tracing | Root cause analysis |
-| `@f1-refactor` | Refactoring plans | Step-by-step refactor plan |
+### Subagents (Invoked automatically or via @mention)
 
-### 🔨 Implementation Agents (Claude Opus)
-| Agent | Purpose | Produces |
-|-------|---------|----------|
-| `@f1-bug-fixer` | Fix bugs | Minimal, tested fixes |
-| `@f1-feature-coder` | Implement features | Working code |
-| `@f1-feature-planner` | Plan implementation | Detailed step-by-step plan |
-| `@f1-git-manager` | Version control | Clean commits |
+| Agent | Model | Purpose |
+|-------|-------|---------|
+| `@f1-planner` | Gemini | Analyzes codebase, creates implementation plans |
+| `@f1-builder` | Opus | Implements features, fixes bugs |
+| `@f1-toolmaker` | Opus | Builds dev tools |
+| `@f1-reviewer` | Gemini | Reviews code before commit |
+| `@f1-ops` | Opus | Git commits, track imports |
 
-### 🛠️ Support Agents (Claude Opus)
-| Agent | Purpose | Produces |
-|-------|---------|----------|
-| `@f1-idea-designer` | Feature design | Feature specifications |
-| `@f1-prompt-builder` | Clarify requests | Refined prompts |
-| `@f1-tool-builder` | Build dev tools | Standalone tools |
-| `@f1-track-importer` | Import tracks | Updated track.py |
+### Model Strategy
+- **Gemini** = Reading, analyzing, deciding (2M context)
+- **Opus** = Writing code (best code generation)
 
 ---
 
 ## Workflows
 
-### 🆕 New Feature
+### Feature Pipeline
 ```
-User → @f1-director → @f1-prompt-builder (if vague)
-                    → @f1-idea-designer (design)
-                    → @f1-onboarding (briefing)
-                    → @f1-feature-planner (plan)
-                    → @f1-feature-coder (implement)
-                    → @f1-reviewer (review)
-                    → USER TESTING ←──────────────┐
-                      ├─ OK → @f1-git-manager     │
-                      └─ Issues → @f1-feature-coder or @f1-bug-fixer ─┘
-```
-
-### 💡 From Backlog (Skips Early Stages)
-```
-User → "process backlog" → @f1-director shows ideas
-     → User picks idea → @f1-onboarding (briefing)
-                       → @f1-feature-planner (plan)
-                       → @f1-feature-coder (implement)
-                       → @f1-reviewer (review)
-                       → USER TESTING ←──────────────┐
-                         ├─ OK → @f1-git-manager     │
-                         └─ Issues → iteration ──────┘
+You ↔ @f1-designer (brainstorm)
+         ↓ "save to backlog" or "build this"
+    @f1-director
+         ↓
+    @f1-planner (analyze + plan)
+         ↓
+    @f1-builder (implement)
+         ↓
+    @f1-reviewer (review)
+         ↓
+    YOU TEST
+         ↓ "works!" or "bug: [description]"
+    @f1-ops (commit)
 ```
 
-### 🐛 Bug Fix
+### Bug Fix Pipeline
 ```
-Bug → @f1-director → @f1-debugger (find root cause)
-                   → @f1-bug-fixer (fix)
-                   → @f1-reviewer (review)
-                   → USER TESTING ←──────────────┐
-                     ├─ OK → @f1-git-manager     │
-                     └─ Issues → @f1-bug-fixer ──┘
-```
-
-### 🔧 Refactor
-```
-Request → @f1-director → @f1-refactor (plan)
-                       → @f1-feature-coder (implement)
-                       → @f1-reviewer (review)
-                       → USER TESTING ←──────────────┐
-                         ├─ OK → @f1-git-manager     │
-                         └─ Issues → iteration ──────┘
+You → @f1-director → "fix [bug]"
+                          ↓
+                    @f1-builder (analyze + fix)
+                          ↓
+                    @f1-reviewer
+                          ↓
+                    YOU TEST → @f1-ops
 ```
 
-### 🛠️ Tool Building
+### Tool Pipeline
 ```
-Request → @f1-director → @f1-tool-builder (build)
-                       → @f1-reviewer (review)
-                       → USER TESTING ←──────────────┐
-                         ├─ OK → @f1-git-manager     │
-                         └─ Issues → iteration ──────┘
-```
-
-### 🏎️ Track Import
-```
-Request → @f1-director → @f1-track-importer (import)
-                       → @f1-reviewer (review)
-                       → USER TESTING ←──────────────┐
-                         ├─ OK → @f1-git-manager     │
-                         └─ Issues → iteration ──────┘
+You ↔ @f1-tool-designer (design)
+         ↓ "build this"
+    @f1-toolmaker (implement)
+         ↓
+    @f1-reviewer → YOU TEST → @f1-ops
 ```
 
 ---
 
-## Pipeline Status
+## Feature Backlog
 
-Check current pipeline state:
-```
-.opencode/context/f1-director-context.md
-```
+Ideas are saved in `@f1-designer`'s context file. To build one:
 
-Status values:
-- `IDLE` - No active pipeline
-- `IN_PROGRESS` - Pipeline running
-- `BLOCKED` - Waiting for something
-- `WAITING_FOR_USER` - User input needed
+1. Tab to `@f1-director`
+2. Say "process backlog"
+3. Pick an idea
+4. Pipeline runs automatically
 
 ---
 
 ## Agent Files
 
-### Agent Definitions
+### Active Agents
 ```
 .opencode/agent/
-├── f1-director.md          # Orchestrator
-├── f1-reviewer.md          # Code review
-├── f1-onboarding.md        # Feature briefings
-├── f1-debugger.md          # Bug tracing
-├── f1-refactor.md          # Refactor planning
-├── f1-bug-fixer.md         # Bug fixing
-├── f1-feature-coder.md     # Feature implementation
-├── f1-feature-planner.md   # Implementation planning
-├── f1-git-manager.md       # Git operations
-├── f1-idea-designer.md     # Feature design
-├── f1-prompt-builder.md    # Request clarification
-├── f1-tool-builder.md      # Tool building
-└── f1-track-importer.md    # Track import
+├── f1-designer.md       # Primary - feature brainstorming
+├── f1-director.md       # Primary - pipeline orchestration
+├── f1-tool-designer.md  # Primary - tool design
+├── f1-planner.md        # Subagent - analysis + planning
+├── f1-builder.md        # Subagent - implementation
+├── f1-toolmaker.md      # Subagent - tool building
+├── f1-reviewer.md       # Subagent - code review
+└── f1-ops.md            # Subagent - git + imports
 ```
 
-### Context Files (Agent Memory)
+### Archived Agents
+```
+.opencode/agent/archived/
+├── f1-bug-fixer.md      # → merged into f1-builder
+├── f1-debugger.md       # → merged into f1-builder
+├── f1-feature-coder.md  # → merged into f1-builder
+├── f1-feature-planner.md # → merged into f1-planner
+├── f1-git-manager.md    # → renamed to f1-ops
+├── f1-idea-designer.md  # → renamed to f1-designer
+├── f1-onboarding.md     # → merged into f1-planner
+├── f1-prompt-builder.md # → merged into f1-designer
+├── f1-refactor.md       # → merged into f1-planner
+├── f1-tool-builder.md   # → renamed to f1-toolmaker
+└── f1-track-importer.md # → merged into f1-ops
+```
+
+### Context Files
 ```
 .opencode/context/
-├── f1-director-context.md          # Pipeline status, history
-├── f1-reviewer-context.md          # Review history, patterns
-├── f1-onboarding-context.md        # Codebase knowledge
-├── f1-debugger-context.md          # Bug patterns, history
-├── f1-refactor-context.md          # Architecture notes
-├── f1-bug-fixer-context.md         # Fix patterns
-├── f1-feature-coder-context.md     # Implementation patterns
-├── f1-feature-planner-context.md   # Planning templates
-├── f1-git-manager-context.md       # Commit history
-├── f1-idea-designer-context.md     # Feature backlog
-├── f1-prompt-builder-context.md    # Question patterns
-├── f1-tool-builder-context.md      # Tool catalog
-└── f1-track-importer-context.md    # Track backups
+├── f1-designer-context.md      # Feature backlog, preferences
+├── f1-director-context.md      # Pipeline status
+├── f1-tool-designer-context.md # Tool ideas
+├── f1-planner-context.md       # Codebase knowledge
+├── f1-builder-context.md       # Implementation patterns
+├── f1-toolmaker-context.md     # Tool patterns
+├── f1-reviewer-context.md      # Review history
+└── f1-ops-context.md           # Commit history, backups
 ```
-
----
-
-## Key Handoff Points
-
-### Director → Analysis
-- Feature request → `@f1-onboarding`
-- Bug report → `@f1-debugger`
-- Refactor request → `@f1-refactor`
-
-### Analysis → Implementation
-- `@f1-onboarding` → `@f1-feature-planner`
-- `@f1-debugger` → `@f1-bug-fixer`
-- `@f1-refactor` → `@f1-feature-coder`
-
-### Implementation → Review
-- `@f1-feature-coder` → `@f1-reviewer`
-- `@f1-bug-fixer` → `@f1-reviewer`
-
-### Review → User Testing
-- `@f1-reviewer` (APPROVED) → **USER TESTING**
-- `@f1-reviewer` (NEEDS CHANGES) → Back to implementation
-
-### User Testing → Git or Iteration
-- User Testing (OK) → `@f1-git-manager`
-- User Testing (Issues) → `@f1-feature-coder` or `@f1-bug-fixer`
 
 ---
 
@@ -299,46 +177,32 @@ F1Manager.run() loop:
 ## Best Practices
 
 ### For Users
-1. **Brainstorm first** - Use INACTIVE mode with `@f1-idea-designer` to explore ideas
-2. **Build when ready** - "activate director" when you want to implement
-3. **Use the backlog** - "process backlog" to pick from saved ideas
-4. Check pipeline status for ongoing work
-5. Be specific about what you want
-6. Let the pipeline complete before new requests
+1. **Brainstorm with @f1-designer** — ideas get saved to backlog
+2. **Build with @f1-director** — say "process backlog" or describe feature
+3. **Test before commit** — you're the final quality gate
+4. **Be specific** — clear requests = better results
 
 ### For Agents
-1. Always update context files
-2. Follow handoff protocols exactly
+1. Update context files after actions
+2. Follow handoff protocols
 3. Test changes before handoff
 4. Document decisions made
-5. **@f1-director:** Check mode FIRST (ACTIVE/INACTIVE)
-6. **@f1-idea-designer:** Save to backlog when Director is INACTIVE
 
 ---
 
-## Troubleshooting
+## Migration Notes (Dec 2025)
 
-### Pipeline Stuck?
-1. Check `f1-director-context.md` for status
-2. Identify blocked agent
-3. Check their context file
-4. Provide missing info or restart
+Consolidated from 14 agents to 8:
 
-### Agent Produced Bad Output?
-1. Note in agent's context file
-2. Provide corrective handoff
-3. Consider using different agent
+| Old Agents | New Agent |
+|------------|-----------|
+| idea-designer + prompt-builder | `@f1-designer` |
+| onboarding + feature-planner + refactor | `@f1-planner` |
+| feature-coder + bug-fixer + debugger | `@f1-builder` |
+| git-manager + track-importer | `@f1-ops` |
+| tool-builder | `@f1-toolmaker` |
+| reviewer | `@f1-reviewer` (unchanged) |
+| director | `@f1-director` (simplified) |
+| (new) | `@f1-tool-designer` |
 
-### Need to Rollback?
-1. Git: `git checkout -- <files>`
-2. Track: Check `f1-track-importer-context.md` for backup
-
----
-
-## Models Used
-
-| Agent Type | Model | Why |
-|------------|-------|-----|
-| Analysis | Gemini 3 Pro | 2M context for full codebase |
-| Implementation | Claude Opus | Best code generation |
-| Director | Claude Opus | Complex orchestration |
+**Why?** Fewer handoffs = faster iteration. Each agent now does more in one session.

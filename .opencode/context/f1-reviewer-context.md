@@ -1,6 +1,6 @@
 # F1 Reviewer Context
 
-**Last Updated:** Mon Dec 22 2025
+**Last Updated:** 2025-12-23
 
 ---
 
@@ -43,6 +43,26 @@
 
 ---
 
+## Common Issues to Watch
+
+### 🔴 Critical
+- Crashes / exceptions
+- Infinite loops
+- Data corruption
+
+### 🟡 Pygame Performance
+- ❌ Surface creation in render loops
+- ❌ Font creation every frame
+- ✅ Surfaces cached in __init__
+- ✅ Fonts cached in __init__
+
+### 🟡 Patterns
+- Values should come from config.py
+- Colors from assets/colors.py
+- Follow existing code style
+
+---
+
 ## Codebase Quality Notes
 
 ### Files That Need Attention
@@ -56,7 +76,7 @@
 | Area | Description | Impact |
 |------|-------------|--------|
 | Physics | High frequency variance (60Hz) | Jittery movement |
-| Time Scale | Simulation runs at ~20x speed | Confusing for users expecting real-time |
+| Time Scale | Simulation runs at ~20x speed | Confusing for users |
 
 ### Good Patterns to Preserve
 | Pattern | Where | Why It's Good |
@@ -67,7 +87,7 @@
 
 ---
 
-## Review Checklist Customizations
+## Review Checklist
 
 ### Project-Specific Rules
 1. All colors must come from config.py or assets/colors.py
@@ -96,45 +116,7 @@
 | Overcut | Pit late to gain advantage | Strategy term |
 | Blue flag | Let faster car pass | For lapped cars |
 
-### 2024 Season Data
+### 2024/2025 Season Data
 - 10 teams, 20 drivers
-- Teams in data/teams.py are accurate
+- Teams in data/teams.py
 - Team colors in assets/colors.py
-
----
-
-## Review Templates
-
-### Quick Approval
-```markdown
-# Code Review: [Name]
-## Summary
-Clean implementation following existing patterns.
-## Verdict: APPROVED ✅
-## Handoff
-@f1-git-manager: Commit with `feat: [description]`
-```
-
-### Needs Minor Changes
-```markdown
-# Code Review: [Name]
-## Summary
-Good work, minor issues to address.
-## Verdict: NEEDS CHANGES 🔄
-## Issues
-### 🟡 Major
-1. [Issue] - `file:line` - [fix]
-## Handoff
-@f1-feature-coder: Fix listed issues, then return for re-review.
-```
-
----
-
-## Session Notes
-
-### Current Session
-Investigated Gap Logic Bug. Found that `BASE_SPEED` was set to 0.25, resulting in 4.33s laps. This caused time gaps to be ~20x smaller than visually expected. Recommended reducing `BASE_SPEED` to 0.045 and adjusting pit stop times.
-
-### Observations
-- The 2025 grid data is very detailed and accurate.
-- The physics model is robust but needs tuning constants extracted.
