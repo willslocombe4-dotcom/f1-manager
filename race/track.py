@@ -7,15 +7,18 @@ import config
 class Track:
     """Represents an F1 circuit with waypoints for car movement"""
 
-    def __init__(self):
+    def __init__(self, waypoints=None):
         self.center_x = config.TRACK_CENTER_X
         self.center_y = config.TRACK_CENTER_Y
         self.outer_radius = config.TRACK_OUTER_RADIUS
         self.inner_radius = config.TRACK_INNER_RADIUS
         self.racing_line_radius = (self.outer_radius + self.inner_radius) // 2
 
-        # Generate waypoints around the track
-        self.waypoints = self._generate_waypoints()
+        # Use provided waypoints or generate default
+        if waypoints is not None:
+            self.waypoints = waypoints
+        else:
+            self.waypoints = self._generate_waypoints()
         self.track_length = len(self.waypoints)
 
     def _generate_waypoints(self):

@@ -1,18 +1,21 @@
 """
 F1 Manager - Phase 1: Live Race Visualization
-Main game loop
+Main game loop with state machine
 """
 import pygame
 import sys
 import config
 from race.race_engine import RaceEngine
+from race.track_loader import get_default_waypoints
 from ui.renderer import TrackRenderer
 from ui.timing_screen import TimingScreen
 from ui.results_screen import ResultsScreen
+from ui.main_menu import MainMenu
+from ui.track_selection import TrackSelectionScreen
 
 
 class F1Manager:
-    """Main game class"""
+    """Main game class with state machine"""
 
     def __init__(self):
         # Initialize pygame
@@ -25,67 +28,160 @@ class F1Manager:
         )
         self.clock = pygame.time.Clock()
 
-        # Initialize game components
-        self.race_engine = RaceEngine()
+        # Game state
+        self.state = config.GAME_STATE_MENU
+        self.running = True
+        self.paused = False
+        
+        # Current track waypoints (None = default)
+        self.current_waypoints = None
+        
+        # Selected track from Track Selection
+        self.selected_track_name = "Default Circuit"  # Track name for display
+        self.selected_waypoints = None  # Waypoints for race (None = default)
+
+        # Initialize UI components (always available)
+        self.main_menu = MainMenu(self.screen)
+        self.main_menu.set_selected_track(self.selected_track_name)
+        self.track_selection = TrackSelectionScreen(self.screen)
+        
+        # Race components (initialized when race starts)
+        self.race_engine = None
+        self.track_renderer = None
+        self.timing_screen = None
+        self.results_screen = None
+
+    def _start_race(self, waypoints=None):
+        """Initialize and start a race with optional custom waypoints"""
+        self.current_waypoints = waypoints
+        self.race_engine = RaceEngine(waypoints=waypoints)
         self.track_renderer = TrackRenderer(self.screen)
         self.timing_screen = TimingScreen(self.screen)
         self.results_screen = ResultsScreen(self.screen)
-
-        # Game state
-        self.running = True
         self.paused = False
+        self.state = config.GAME_STATE_RACING
+
+    def _return_to_menu(self):
+        """Clean up race and return to main menu"""
+        # Reset track renderer cache if it exists
+        if self.track_renderer:
+            self.track_renderer.reset_cache()
+        
+        # Clear race components
+        self.race_engine = None
+        self.track_renderer = None
+        self.timing_screen = None
+        self.results_screen = None
+        
+        # Reset menu state
+        self.main_menu.selected_index = 0
+        self.state = config.GAME_STATE_MENU
 
     def handle_events(self):
-        """Handle user input"""
+        """Handle user input based on current state"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+                return
 
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.running = False
+            # Route events based on state
+            if self.state == config.GAME_STATE_MENU:
+                self._handle_menu_event(event)
+            elif self.state == config.GAME_STATE_TRACK_SELECTION:
+                self._handle_track_selection_event(event)
+            elif self.state == config.GAME_STATE_RACING:
+                self._handle_racing_event(event)
+            elif self.state == config.GAME_STATE_RESULTS:
+                self._handle_results_event(event)
 
-                elif event.key == pygame.K_SPACE:
-                    if self.race_engine.is_race_finished():
-                        # New race with new grid
-                        self.race_engine = RaceEngine()
-                        self.results_screen.reset_scroll()
-                    elif not self.race_engine.race_started:
-                        self.race_engine.start_race()
-                    else:
-                        self.paused = not self.paused
+    def _handle_menu_event(self, event):
+        """Handle events in main menu state"""
+        action = self.main_menu.handle_event(event)
+        
+        if action == "quick_race":
+            self._start_race(waypoints=self.selected_waypoints)  # Use selected track or default
+        elif action == "track_selection":
+            self.track_selection.refresh_tracks()
+            self.track_selection.set_current_selection(self.selected_track_name)
+            self.state = config.GAME_STATE_TRACK_SELECTION
+        elif action == "settings":
+            # TODO: Implement settings screen (Phase 2)
+            pass
+        elif action == "quit":
+            self.running = False
 
-                elif event.key == pygame.K_r:
-                    # Restart race
-                    self.race_engine = RaceEngine()
-                    self.results_screen.reset_scroll()
+    def _handle_track_selection_event(self, event):
+        """Handle events in track selection state"""
+        result = self.track_selection.handle_event(event)
+        
+        if isinstance(result, tuple) and result[0] == "select":
+            # ESC was pressed - store selected track name and waypoints, return to menu
+            self.selected_track_name = result[1]
+            self.selected_waypoints = result[2]
+            self.main_menu.set_selected_track(self.selected_track_name)
+            self.state = config.GAME_STATE_MENU
 
-                # Speed control keys (1-5)
-                elif event.key == pygame.K_1:
-                    self.race_engine.set_simulation_speed(1)
-                elif event.key == pygame.K_2:
-                    self.race_engine.set_simulation_speed(2)
-                elif event.key == pygame.K_3:
-                    self.race_engine.set_simulation_speed(5)
-                elif event.key == pygame.K_4:
-                    self.race_engine.set_simulation_speed(10)
-                elif event.key == pygame.K_5:
-                    self.race_engine.set_simulation_speed(20)
+    def _handle_racing_event(self, event):
+        """Handle events during racing"""
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self._return_to_menu()
+                return
 
-                # Pass scroll events to results screen if race is finished
-                elif self.race_engine.is_race_finished():
-                    if event.key in (pygame.K_UP, pygame.K_DOWN):
-                        self.results_screen.handle_scroll(event)
-
-            # Handle mouse wheel scrolling on results screen
-            elif event.type == pygame.MOUSEWHEEL:
+            elif event.key == pygame.K_SPACE:
                 if self.race_engine.is_race_finished():
-                    self.results_screen.handle_scroll(event)
+                    # Race finished - go to results
+                    self.state = config.GAME_STATE_RESULTS
+                elif not self.race_engine.race_started:
+                    self.race_engine.start_race()
+                else:
+                    self.paused = not self.paused
+
+            elif event.key == pygame.K_r:
+                # Restart race with same track
+                self._start_race(waypoints=self.current_waypoints)
+
+            # Speed control keys (1-5)
+            elif event.key == pygame.K_1:
+                self.race_engine.set_simulation_speed(1)
+            elif event.key == pygame.K_2:
+                self.race_engine.set_simulation_speed(2)
+            elif event.key == pygame.K_3:
+                self.race_engine.set_simulation_speed(5)
+            elif event.key == pygame.K_4:
+                self.race_engine.set_simulation_speed(10)
+            elif event.key == pygame.K_5:
+                self.race_engine.set_simulation_speed(20)
+
+        # Handle mouse clicks for speed buttons
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left click
+                self._handle_speed_button_click(event.pos)
+
+    def _handle_results_event(self, event):
+        """Handle events on results screen"""
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self._return_to_menu()
+                return
             
-            # Handle mouse clicks for speed buttons
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Left click
-                    self._handle_speed_button_click(event.pos)
+            elif event.key == pygame.K_SPACE:
+                # Return to menu
+                self._return_to_menu()
+                return
+            
+            elif event.key == pygame.K_r:
+                # Restart race with same track
+                self._start_race(waypoints=self.current_waypoints)
+                return
+            
+            # Scroll events
+            elif event.key in (pygame.K_UP, pygame.K_DOWN):
+                self.results_screen.handle_scroll(event)
+
+        # Handle mouse wheel scrolling
+        elif event.type == pygame.MOUSEWHEEL:
+            self.results_screen.handle_scroll(event)
 
     def _handle_speed_button_click(self, pos):
         """Check if a speed button was clicked"""
@@ -105,52 +201,37 @@ class F1Manager:
                     break
 
     def update(self):
-        """Update game state"""
-        if self.race_engine.race_started and not self.paused and not self.race_engine.is_race_finished():
-            self.race_engine.update()
+        """Update game state based on current state"""
+        if self.state == config.GAME_STATE_MENU:
+            self.main_menu.update()
+        elif self.state == config.GAME_STATE_TRACK_SELECTION:
+            self.track_selection.update()
+        elif self.state == config.GAME_STATE_RACING:
+            if self.race_engine and self.race_engine.race_started and not self.paused:
+                if self.race_engine.is_race_finished():
+                    # Auto-transition to results
+                    self.state = config.GAME_STATE_RESULTS
+                else:
+                    self.race_engine.update()
 
     def render(self):
-        """Render everything"""
+        """Render based on current state"""
         # Clear screen
         self.screen.fill(config.BG_COLOR)
 
-        # Check if race is finished
-        if self.race_engine.is_race_finished():
-            # Show results screen
+        if self.state == config.GAME_STATE_MENU:
+            self.main_menu.render()
+            
+        elif self.state == config.GAME_STATE_TRACK_SELECTION:
+            self.track_selection.render()
+            
+        elif self.state == config.GAME_STATE_RACING:
+            self._render_race()
+            
+        elif self.state == config.GAME_STATE_RESULTS:
             self.results_screen.render(self.race_engine)
-        else:
-            # Show normal race view
-            # Render track and cars
-            self.track_renderer.render(self.race_engine)
 
-            # Render timing screen
-            self.timing_screen.render(self.race_engine)
-
-            # Draw separator line
-            pygame.draw.line(
-                self.screen,
-                config.TRACK_LINE_COLOR,
-                (config.TRACK_VIEW_WIDTH, 0),
-                (config.TRACK_VIEW_WIDTH, config.SCREEN_HEIGHT),
-                2
-            )
-
-            # Show pause indicator
-            if self.paused:
-                font = pygame.font.Font(None, 48)
-                pause_text = font.render("PAUSED", True, config.TEXT_COLOR)
-                pause_rect = pause_text.get_rect(
-                    center=(config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2)
-                )
-                # Draw semi-transparent background
-                bg_rect = pause_rect.inflate(40, 20)
-                overlay = pygame.Surface((bg_rect.width, bg_rect.height))
-                overlay.set_alpha(200)
-                overlay.fill((0, 0, 0))
-                self.screen.blit(overlay, bg_rect)
-                self.screen.blit(pause_text, pause_rect)
-
-        # Show FPS
+        # Show FPS (always)
         fps = int(self.clock.get_fps())
         font_small = pygame.font.Font(None, 20)
         fps_text = font_small.render(f"FPS: {fps}", True, config.TEXT_GRAY)
@@ -158,6 +239,38 @@ class F1Manager:
 
         # Update display
         pygame.display.flip()
+
+    def _render_race(self):
+        """Render the race view"""
+        # Render track and cars
+        self.track_renderer.render(self.race_engine)
+
+        # Render timing screen
+        self.timing_screen.render(self.race_engine)
+
+        # Draw separator line
+        pygame.draw.line(
+            self.screen,
+            config.TRACK_LINE_COLOR,
+            (config.TRACK_VIEW_WIDTH, 0),
+            (config.TRACK_VIEW_WIDTH, config.SCREEN_HEIGHT),
+            2
+        )
+
+        # Show pause indicator
+        if self.paused:
+            font = pygame.font.Font(None, 48)
+            pause_text = font.render("PAUSED", True, config.TEXT_COLOR)
+            pause_rect = pause_text.get_rect(
+                center=(config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2)
+            )
+            # Draw semi-transparent background
+            bg_rect = pause_rect.inflate(40, 20)
+            overlay = pygame.Surface((bg_rect.width, bg_rect.height))
+            overlay.set_alpha(200)
+            overlay.fill((0, 0, 0))
+            self.screen.blit(overlay, bg_rect)
+            self.screen.blit(pause_text, pause_rect)
 
     def run(self):
         """Main game loop"""

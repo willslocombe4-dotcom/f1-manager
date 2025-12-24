@@ -28,6 +28,10 @@ class TrackRenderer:
         self.speed_button_height = 25
         self.speed_button_margin = 5
 
+    def reset_cache(self):
+        """Clear cached static track surface when track changes"""
+        self.static_surface = None
+
     def render(self, race_engine):
         """Render the track and all cars"""
         # Clear track surface

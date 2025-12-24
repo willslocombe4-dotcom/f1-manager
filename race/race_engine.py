@@ -10,8 +10,8 @@ import config
 class RaceEngine:
     """Manages the entire race simulation"""
 
-    def __init__(self):
-        self.track = Track()
+    def __init__(self, waypoints=None):
+        self.track = Track(waypoints=waypoints)
         self.cars = []
         self.race_started = False
         self.race_time = 0.0
