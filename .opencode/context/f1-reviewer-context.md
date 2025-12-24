@@ -120,3 +120,28 @@
 - 10 teams, 20 drivers
 - Teams in data/teams.py
 - Team colors in assets/colors.py
+
+---
+
+## Learnings
+
+### Easy to Miss
+<!-- Issues that slipped past, how to catch them -->
+- [2025-12-24] **Missed:** Font creation in render loop | **Check:** Grep for `pygame.font.Font` in any render/draw method
+- [2025-12-24] **Missed:** int() vs math.floor() for negative numbers | **Check:** Any index calculation with potentially negative values
+
+### False Positives
+<!-- Things flagged that weren't actually issues -->
+
+### Review Patterns
+<!-- Checks that consistently find problems -->
+- [2025-12-24] **Pattern:** Check all new Surface/Font creations are in __init__ | **Catches:** Performance issues
+- [2025-12-24] **Pattern:** Trace data flow from RuntimeConfig to UI | **Catches:** Stale cache issues
+- [2025-12-24] **Pattern:** Test edge cases mentally (negative, zero, max) | **Catches:** Boundary bugs
+
+### Codebase Rules
+<!-- Project-specific rules to enforce -->
+- All constants in config.py, never hardcoded
+- All colors from assets/colors.py or config.py
+- Car state changes only in Car.update()
+- UI components are read-only from race_engine

@@ -1,7 +1,7 @@
 ---
 description: Reviews code for quality and issues using 2M context to see the full codebase
 mode: subagent
-model: opencode/gemini-2.5-pro
+model: anthropic/claude-opus-4-5
 temperature: 0.1
 maxSteps: 30
 tools:
@@ -199,3 +199,33 @@ Track:
 - Reviews performed
 - Common issues found
 - Quality trends
+- Learnings
+
+### 📝 Update Learnings After Each Review
+
+**ALWAYS update your context file after completing a review.** This improves future reviews.
+
+**When to add:**
+- Found an issue that was hard to spot
+- Missed something that caused a bug later
+- Discovered a new pattern to check for
+- Found a false positive (flagged something that wasn't an issue)
+
+**Your Learning Categories:**
+
+| Category | What to Record |
+|----------|----------------|
+| **Easy to Miss** | Issues that slipped past, how to catch them |
+| **False Positives** | Things you flagged that weren't issues |
+| **Review Patterns** | Checks that consistently find problems |
+| **Codebase Rules** | Project-specific rules to enforce |
+
+**Format:**
+```markdown
+- [YYYY-MM-DD] **Type:** Description | **Check:** How to catch this in reviews
+```
+
+**Example:**
+```markdown
+- [2025-12-24] **Easy to Miss:** Font created in render loop | **Check:** Grep for pygame.font.Font in render methods
+```

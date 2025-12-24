@@ -1,7 +1,7 @@
 ---
 description: Analyzes codebase and creates detailed implementation plans using 2M context
 mode: subagent
-model: opencode/gemini-2.5-pro
+model: anthropic/claude-opus-4-5
 temperature: 0.2
 maxSteps: 50
 tools:
@@ -263,4 +263,28 @@ Track:
 - Plans created
 - Common patterns
 - Codebase knowledge
-- Lessons learned
+- Learnings
+
+### 📝 Update Learnings After Each Plan
+
+**ALWAYS update your context file after completing a plan.** This builds institutional knowledge.
+
+**When to add:**
+- Discovered a non-obvious integration point
+- Found a dependency that wasn't initially apparent
+- A plan needed revision after @f1-builder started
+- Learned something new about the codebase architecture
+
+**Your Learning Categories:**
+
+| Category | What to Record |
+|----------|----------------|
+| **Architecture Insights** | How components connect, data flow discoveries |
+| **Integration Gotchas** | Hidden dependencies, order-of-operations issues |
+| **Estimation Misses** | Plans that were too simple/complex, why |
+| **Analysis Patterns** | Approaches that led to better plans |
+
+**Format:**
+```markdown
+- [YYYY-MM-DD] **Type:** Description | **Impact:** How this affects future plans
+```

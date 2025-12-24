@@ -1,7 +1,7 @@
 ---
 description: Builds standalone development tools based on designs from f1-tool-designer
 mode: subagent
-model: opencode/claude-opus-4-5
+model: anthropic/claude-opus-4-5
 temperature: 0.2
 maxSteps: 80
 tools:
@@ -315,4 +315,28 @@ Ready for @f1-reviewer.
 Track:
 - Tools built
 - Patterns used
-- Common issues
+- Learnings
+
+### 📝 Update Learnings After Each Tool
+
+**ALWAYS update your context file after building a tool.** This improves future tools.
+
+**When to add:**
+- Found a pygame pattern that works well for tools
+- Hit an issue with the tool template
+- Discovered a better way to structure tools
+- Export format caused issues for the game
+
+**Your Learning Categories:**
+
+| Category | What to Record |
+|----------|----------------|
+| **Pygame Tool Patterns** | UI patterns, event handling, drawing |
+| **Export Format Issues** | Formats that didn't work, fixes |
+| **Template Improvements** | Better ways to structure tools |
+| **User Experience Wins** | Controls/UI that users liked |
+
+**Format:**
+```markdown
+- [YYYY-MM-DD] **Type:** Description | **Use:** When to apply this
+```

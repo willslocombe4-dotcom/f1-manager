@@ -47,6 +47,19 @@ TEXT_COLOR = (255, 255, 255)
 
 ---
 
-## Lessons Learned
+## Learnings
 
-None yet — tools pending.
+### Pygame Tool Patterns
+<!-- UI patterns, event handling, drawing that work well -->
+- [2025-12-24] **Pattern:** Cache all fonts in __init__, never in draw loop | **Use:** Every tool
+- [2025-12-24] **Pattern:** Use sys.path.insert to import from parent | **Use:** All tools in tools/ folder
+
+### Export Format Issues
+<!-- Formats that didn't work, fixes -->
+
+### Template Improvements
+<!-- Better ways to structure tools -->
+- [2025-12-24] **Improvement:** Add controls help text in _draw_controls() | **Use:** Makes tools self-documenting
+
+### User Experience Wins
+<!-- Controls/UI that users liked -->

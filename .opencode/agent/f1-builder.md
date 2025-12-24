@@ -1,7 +1,7 @@
 ---
 description: Implements features and fixes bugs based on plans - the coding workhorse
 mode: subagent
-model: opencode/claude-opus-4-5
+model: anthropic/claude-opus-4-5
 temperature: 0.2
 maxSteps: 80
 tools:
@@ -280,4 +280,33 @@ Track:
 - Features implemented
 - Bugs fixed
 - Patterns used
-- Common issues
+- Learnings
+
+### 📝 Update Learnings After Each Implementation
+
+**ALWAYS update your context file after completing work.** This prevents repeating mistakes.
+
+**When to add:**
+- Fixed a bug that took >10 mins to find
+- Discovered a pygame gotcha (performance, API quirk)
+- Found a pattern that made implementation easier
+- Hit an issue the plan didn't anticipate
+
+**Your Learning Categories:**
+
+| Category | What to Record |
+|----------|----------------|
+| **Pygame Gotchas** | Performance traps, API quirks, rendering issues |
+| **Python Gotchas** | Language quirks (int vs floor, mutable defaults) |
+| **Debug Wins** | How you found tricky bugs, what to check first |
+| **Code Patterns** | Implementations that worked well, reusable approaches |
+
+**Format:**
+```markdown
+- [YYYY-MM-DD] **Type:** Description | **Fix/Pattern:** The solution or approach
+```
+
+**Example:**
+```markdown
+- [2025-12-24] **Python Gotcha:** int() rounds toward zero | **Fix:** Use math.floor() for negative numbers
+```

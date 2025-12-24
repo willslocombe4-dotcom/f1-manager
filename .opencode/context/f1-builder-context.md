@@ -49,9 +49,27 @@ self.new_property = calculated_value
 
 ---
 
-## Common Issues
+## Learnings
 
-None documented yet.
+### Pygame Gotchas
+<!-- Performance traps, API quirks, rendering issues -->
+- [2025-12-24] **Gotcha:** Creating fonts/surfaces in render loop kills performance | **Fix:** Cache in __init__, only blit in render
+- [2025-12-24] **Gotcha:** pygame.draw coords should be ints for older pygame | **Fix:** Use int() or let pygame-ce handle floats
+
+### Python Gotchas
+<!-- Language quirks that caused bugs -->
+- [2025-12-24] **Gotcha:** int() rounds toward zero, not down | **Fix:** Use math.floor() for negative numbers (e.g., car progress)
+- [2025-12-24] **Gotcha:** Dict/list default args are mutable and shared | **Fix:** Use None default, create in function
+
+### Debug Wins
+<!-- How you found tricky bugs, what to check first -->
+- [2025-12-24] **Win:** Lap 1 corner cutting was negative progress + int() | **Check:** Always test with negative values when progress/index involved
+- [2025-12-24] **Win:** Gravel on wrong side was fixed perpendicular direction | **Check:** Use cross product to detect turn direction
+
+### Code Patterns
+<!-- Implementations that worked well -->
+- [2025-12-24] **Pattern:** Cross product for turn direction: `(x2-x1)*(y3-y2) - (y2-y1)*(x3-x2)` | **Use:** Positive=left turn, negative=right turn
+- [2025-12-24] **Pattern:** Waypoint interpolation for smooth movement | **Use:** `t = exact_index - math.floor(exact_index)` then lerp
 
 ---
 

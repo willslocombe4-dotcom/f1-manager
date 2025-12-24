@@ -51,3 +51,23 @@ Previous track data before imports (for rollback):
 
 **Remote:** origin → https://github.com/willslocombe4-dotcom/f1-manager.git
 **Branch:** master
+
+---
+
+## Learnings
+
+### Git Gotchas
+<!-- Commands that behaved unexpectedly -->
+- [2025-12-24] **Gotcha:** New files not staged with `git add -u` | **Solution:** Use `git add -A` or explicitly add new files
+
+### Track Import Issues
+<!-- Format problems, waypoint issues -->
+
+### Commit Patterns
+<!-- Message formats that work well -->
+- [2025-12-24] **Pattern:** Use `feat:` for new features, `fix:` for bugs | **Benefit:** Clear history, easy to find changes
+- [2025-12-24] **Pattern:** List files changed in commit body | **Benefit:** Easy to review without git show
+
+### Workflow Wins
+<!-- Sequences of commands that work reliably -->
+- [2025-12-24] **Workflow:** `git status` → `git diff` → `git add` → `git commit` → `git push` | **Benefit:** Catches issues before commit

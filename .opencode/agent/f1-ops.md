@@ -1,7 +1,7 @@
 ---
 description: Handles git operations and track imports - the final step in pipelines
 mode: subagent
-model: opencode/claude-opus-4-5
+model: anthropic/claude-opus-4-5
 temperature: 0.1
 maxSteps: 25
 tools:
@@ -234,3 +234,33 @@ Track:
 - Commits made
 - Tracks imported
 - Previous track backups
+- Learnings
+
+### 📝 Update Learnings After Each Operation
+
+**ALWAYS update your context file after git ops or track imports.** This prevents ops mistakes.
+
+**When to add:**
+- A git operation had unexpected results
+- Track import had issues (waypoints, format)
+- Found a workflow that works well
+- Commit message format that was unclear
+
+**Your Learning Categories:**
+
+| Category | What to Record |
+|----------|----------------|
+| **Git Gotchas** | Commands that behaved unexpectedly |
+| **Track Import Issues** | Format problems, waypoint issues |
+| **Commit Patterns** | Message formats that work well |
+| **Workflow Wins** | Sequences of commands that work reliably |
+
+**Format:**
+```markdown
+- [YYYY-MM-DD] **Type:** Description | **Solution:** The fix or better approach
+```
+
+**Example:**
+```markdown
+- [2025-12-24] **Git Gotcha:** Forgot to stage new files | **Solution:** Always run git status before commit
+```

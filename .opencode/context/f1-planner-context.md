@@ -53,6 +53,22 @@ main.py (F1Manager) → RaceEngine → Cars + Track → UI Components
 
 ---
 
-## Lessons Learned
+## Learnings
 
-None yet — first plans pending.
+### Architecture Insights
+<!-- How components connect, data flow discoveries -->
+- [2025-12-24] **Insight:** RuntimeConfig is singleton but UI screens cache values at creation | **Impact:** Plans must include cache invalidation when settings change
+- [2025-12-24] **Insight:** Cars use negative progress for grid formation (staggered start) | **Impact:** Any progress-related code must handle negative values
+
+### Integration Gotchas
+<!-- Hidden dependencies, order-of-operations issues -->
+- [2025-12-24] **Gotcha:** Track boundaries (outer/inner points) are relative to track direction, not absolute | **Impact:** Turn direction detection needed for correct gravel/kerb placement
+- [2025-12-24] **Gotcha:** Presets load into RuntimeConfig but cached UI screens show old values | **Impact:** Must clear screen cache after preset load
+
+### Estimation Misses
+<!-- Plans that were too simple/complex, why -->
+
+### Analysis Patterns
+<!-- Approaches that led to better plans -->
+- [2025-12-24] **Pattern:** Read ALL files that touch the feature before planning | **Impact:** Prevents missed integration points
+- [2025-12-24] **Pattern:** Check for negative/edge case handling in existing code | **Impact:** Reveals hidden assumptions (like int() vs floor())
