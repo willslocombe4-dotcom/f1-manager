@@ -47,22 +47,73 @@ class Track:
 
     def get_position(self, progress):
         """
-        Get x, y coordinates for a given progress (0.0 to 1.0) around the track
+        Get x, y coordinates for a given progress (0.0 to 1.0) around the track.
+        Uses linear interpolation between waypoints for smooth movement.
+        
+        Note: Handles negative progress values (used for grid formation) correctly
+        by using math.floor() instead of int() for proper floor division.
         """
-        index = int(progress * self.track_length) % self.track_length
-        return self.waypoints[index]
+        # Calculate exact position with interpolation
+        exact_index = progress * self.track_length
+        
+        # Use math.floor() for correct handling of negative values
+        # int() rounds toward zero: int(-0.975) = 0
+        # math.floor() always rounds down: math.floor(-0.975) = -1
+        floored_index = math.floor(exact_index)
+        index = floored_index % self.track_length
+        next_index = (index + 1) % self.track_length
+        
+        # Interpolation factor (0.0 to 1.0 between waypoints)
+        # With math.floor(), t is always positive: -0.975 - (-1) = 0.025
+        t = exact_index - floored_index
+        
+        x1, y1 = self.waypoints[index]
+        x2, y2 = self.waypoints[next_index]
+        
+        # Linear interpolation
+        x = x1 + (x2 - x1) * t
+        y = y1 + (y2 - y1) * t
+        
+        return x, y
 
     def get_angle(self, progress):
         """
-        Get the angle (in radians) of the track at a given progress
+        Get the angle (in radians) of the track at a given progress.
+        Uses interpolation between segment angles for smooth rotation.
+        
+        Note: Handles negative progress values (used for grid formation) correctly
+        by using math.floor() instead of int() for proper floor division.
         """
-        index = int(progress * self.track_length) % self.track_length
+        # Calculate exact position
+        exact_index = progress * self.track_length
+        
+        # Use math.floor() for correct handling of negative values
+        floored_index = math.floor(exact_index)
+        index = floored_index % self.track_length
         next_index = (index + 1) % self.track_length
+        next_next_index = (index + 2) % self.track_length
+        
+        # Interpolation factor (always 0.0 to 1.0 with math.floor())
+        t = exact_index - floored_index
 
+        # Get current segment angle
         x1, y1 = self.waypoints[index]
         x2, y2 = self.waypoints[next_index]
-
-        return math.atan2(y2 - y1, x2 - x1)
+        angle1 = math.atan2(y2 - y1, x2 - x1)
+        
+        # Get next segment angle
+        x3, y3 = self.waypoints[next_next_index]
+        angle2 = math.atan2(y3 - y2, x3 - x2)
+        
+        # Handle angle wrapping (e.g., from 179° to -179°)
+        angle_diff = angle2 - angle1
+        if angle_diff > math.pi:
+            angle_diff -= 2 * math.pi
+        elif angle_diff < -math.pi:
+            angle_diff += 2 * math.pi
+        
+        # Interpolate angle
+        return angle1 + angle_diff * t
 
     def get_offset_position(self, progress, offset):
         """

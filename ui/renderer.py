@@ -91,10 +91,10 @@ class TrackRenderer:
             if len(patch_points) >= 3:
                 pygame.draw.polygon(surface, config.GRASS_LIGHT_COLOR, patch_points)
 
-        # LAYER 2: Gravel traps at corners
+        # LAYER 2: Gravel traps at corners (on outside of each turn)
         corner_indices = track.get_corner_indices(curvature_threshold=15)
         for corner_idx in corner_indices:
-            self._draw_gravel_trap(surface, waypoints, outer_points, corner_idx, track_width)
+            self._draw_gravel_trap(surface, waypoints, outer_points, inner_points, corner_idx, track_width)
 
         # LAYER 3: Track surface
         # Draw track as individual segments to avoid polygon fill issues
@@ -135,33 +135,52 @@ class TrackRenderer:
 
         return surface
 
-    def _draw_gravel_trap(self, surface, waypoints, outer_points, corner_idx, track_width):
-        """Draw gravel trap on outside of corner"""
+    def _draw_gravel_trap(self, surface, waypoints, outer_points, inner_points, corner_idx, track_width):
+        """Draw gravel trap on outside of corner (correct side based on turn direction)"""
+        # Determine turn direction at this corner using cross product
+        prev_idx = (corner_idx - 1) % len(waypoints)
+        next_idx = (corner_idx + 1) % len(waypoints)
+        
+        x1, y1 = waypoints[prev_idx]
+        x2, y2 = waypoints[corner_idx]
+        x3, y3 = waypoints[next_idx]
+        
+        # Cross product: positive = left turn (CCW), negative = right turn (CW)
+        cross = (x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2)
+        
+        # Choose which boundary is the OUTSIDE of the turn
+        # For left turns (cross > 0): outer_points is the outside
+        # For right turns (cross < 0): inner_points is the outside
+        if cross > 0:
+            boundary_points = outer_points
+        else:
+            boundary_points = inner_points
+        
         gravel_outer_points = []  # Extended points (outer edge of gravel)
-        gravel_inner_points = []  # Track outer edge (inner edge of gravel)
+        gravel_inner_points = []  # Track boundary edge (inner edge of gravel)
         extend_range = 4  # Waypoints before/after corner
 
         for offset in range(-extend_range, extend_range + 1):
             idx = (corner_idx + offset) % len(waypoints)
 
-            # Get outer point and extend it further outward
-            if idx < len(outer_points):
-                ox, oy = outer_points[idx]
+            # Get boundary point and extend it further outward
+            if idx < len(boundary_points):
+                bx, by = boundary_points[idx]
                 wx, wy = waypoints[idx]
 
-                # Calculate direction from waypoint to outer point
-                dx = ox - wx
-                dy = oy - wy
+                # Calculate direction from waypoint to boundary point
+                dx = bx - wx
+                dy = by - wy
                 length = math.sqrt(dx * dx + dy * dy)
 
                 if length > 0:
-                    # Store the track outer edge point (inner boundary of gravel)
-                    gravel_inner_points.append((ox, oy))
+                    # Store the track boundary edge point (inner boundary of gravel)
+                    gravel_inner_points.append((bx, by))
 
-                    # Extend 25 pixels beyond outer edge for gravel outer boundary
+                    # Extend 25 pixels beyond boundary edge for gravel outer boundary
                     extension = 25
-                    gravel_x = ox + (dx / length) * extension
-                    gravel_y = oy + (dy / length) * extension
+                    gravel_x = bx + (dx / length) * extension
+                    gravel_y = by + (dy / length) * extension
                     gravel_outer_points.append((gravel_x, gravel_y))
 
         if len(gravel_outer_points) >= 3 and len(gravel_inner_points) >= 3:
