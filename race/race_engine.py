@@ -6,6 +6,7 @@ from race.track import Track
 from race.car import Car
 from data.teams import TEAMS_DATA
 import config
+from settings.runtime_config import runtime_config
 
 class RaceEngine:
     """Manages the entire race simulation"""
@@ -15,10 +16,10 @@ class RaceEngine:
         self.cars = []
         self.race_started = False
         self.race_time = 0.0
-        self.total_laps = 20  # Sprint race
+        self.total_laps = runtime_config.race_laps  # Use runtime config
         
         # Simulation speed control
-        self.simulation_speed = config.SIMULATION_SPEED_DEFAULT
+        self.simulation_speed = runtime_config.simulation_speed
 
         # Initialize cars
         self._initialize_cars()

@@ -12,6 +12,9 @@ from ui.timing_screen import TimingScreen
 from ui.results_screen import ResultsScreen
 from ui.main_menu import MainMenu
 from ui.track_selection import TrackSelectionScreen
+from ui.settings_screen import SettingsScreen
+from settings.runtime_config import runtime_config
+from settings.persistence import SettingsPersistence
 
 
 class F1Manager:
@@ -44,12 +47,16 @@ class F1Manager:
         self.main_menu = MainMenu(self.screen)
         self.main_menu.set_selected_track(self.selected_track_name)
         self.track_selection = TrackSelectionScreen(self.screen)
+        self.settings_screen = SettingsScreen(self.screen)
         
         # Race components (initialized when race starts)
         self.race_engine = None
         self.track_renderer = None
         self.timing_screen = None
         self.results_screen = None
+        
+        # Load saved settings on startup
+        SettingsPersistence.load(runtime_config)
 
     def _start_race(self, waypoints=None):
         """Initialize and start a race with optional custom waypoints"""
@@ -89,6 +96,8 @@ class F1Manager:
                 self._handle_menu_event(event)
             elif self.state == config.GAME_STATE_TRACK_SELECTION:
                 self._handle_track_selection_event(event)
+            elif self.state == config.GAME_STATE_SETTINGS:
+                self._handle_settings_event(event)
             elif self.state == config.GAME_STATE_RACING:
                 self._handle_racing_event(event)
             elif self.state == config.GAME_STATE_RESULTS:
@@ -105,8 +114,7 @@ class F1Manager:
             self.track_selection.set_current_selection(self.selected_track_name)
             self.state = config.GAME_STATE_TRACK_SELECTION
         elif action == "settings":
-            # TODO: Implement settings screen (Phase 2)
-            pass
+            self.state = config.GAME_STATE_SETTINGS
         elif action == "quit":
             self.running = False
 
@@ -119,6 +127,15 @@ class F1Manager:
             self.selected_track_name = result[1]
             self.selected_waypoints = result[2]
             self.main_menu.set_selected_track(self.selected_track_name)
+            self.state = config.GAME_STATE_MENU
+
+    def _handle_settings_event(self, event):
+        """Handle events in settings state"""
+        result = self.settings_screen.handle_event(event)
+        
+        if result == "back":
+            # Save settings when leaving settings screen
+            SettingsPersistence.save(runtime_config)
             self.state = config.GAME_STATE_MENU
 
     def _handle_racing_event(self, event):
@@ -206,6 +223,8 @@ class F1Manager:
             self.main_menu.update()
         elif self.state == config.GAME_STATE_TRACK_SELECTION:
             self.track_selection.update()
+        elif self.state == config.GAME_STATE_SETTINGS:
+            self.settings_screen.update()
         elif self.state == config.GAME_STATE_RACING:
             if self.race_engine and self.race_engine.race_started and not self.paused:
                 if self.race_engine.is_race_finished():
@@ -224,6 +243,9 @@ class F1Manager:
             
         elif self.state == config.GAME_STATE_TRACK_SELECTION:
             self.track_selection.render()
+            
+        elif self.state == config.GAME_STATE_SETTINGS:
+            self.settings_screen.render()
             
         elif self.state == config.GAME_STATE_RACING:
             self._render_race()

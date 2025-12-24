@@ -56,6 +56,7 @@ GAME_STATE_MENU = "menu"
 GAME_STATE_TRACK_SELECTION = "track_selection"
 GAME_STATE_RACING = "racing"
 GAME_STATE_RESULTS = "results"
+GAME_STATE_SETTINGS = "settings"
 
 # Track Loading
 TRACKS_DIRECTORY = "tools/tracks"

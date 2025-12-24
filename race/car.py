@@ -4,6 +4,7 @@ Phase 1: Foundation - Fuel, Tires, Synergy, Pit Stops
 """
 import random
 import config
+from settings.runtime_config import runtime_config
 
 
 class Car:
@@ -129,7 +130,7 @@ class Car:
         pace = config.BASE_SPEED
         
         # 2. Team tier modifier (+4% to -5%)
-        tier_mod = config.TIER_MODIFIERS.get(self.team_tier, 1.0)
+        tier_mod = runtime_config.tier_modifiers.get(self.team_tier, 1.0)
         pace *= tier_mod
         
         # 3. Driver skill (70-99 → normalized to 0.85-1.00 range)
@@ -139,24 +140,24 @@ class Car:
         pace *= skill_factor
         
         # 4. Synergy modifier
-        synergy_mod = config.SYNERGY_MODIFIERS.get(self.synergy_level, 1.0)
+        synergy_mod = runtime_config.synergy_modifiers.get(self.synergy_level, 1.0)
         pace *= synergy_mod
         
         # 5. Fuel load penalty (full tank = -4%, empty = 0%)
-        fuel_penalty = self.fuel_load * config.FUEL_START_PENALTY
+        fuel_penalty = self.fuel_load * runtime_config.fuel_start_penalty
         pace *= (1.0 - fuel_penalty)
         
         # 6. Tire degradation
-        deg_rate = config.TIRE_DEG_RATES.get(self.tire_compound, 0.002)
+        deg_rate = runtime_config.tire_deg_rates.get(self.tire_compound, 0.002)
         tire_penalty = self.tire_age * deg_rate
         
         # Check for tire cliff
-        cliff_lap = config.TIRE_CLIFF_LAPS.get(self.tire_compound, 20)
+        cliff_lap = runtime_config.tire_cliff_laps.get(self.tire_compound, 20)
         if self.tire_age >= cliff_lap:
-            tire_penalty += config.TIRE_CLIFF_PENALTY
+            tire_penalty += runtime_config.tire_cliff_penalty
         
         # Cap tire penalty at maximum
-        pace *= (1.0 - min(tire_penalty, config.MAX_TIRE_PENALTY))
+        pace *= (1.0 - min(tire_penalty, runtime_config.max_tire_penalty))
         
         # 7. Lap-to-lap variance (calculated once per lap in update())
         pace *= self.current_lap_variance
@@ -178,19 +179,19 @@ class Car:
             return False
         
         # Don't pit on first lap or last few laps
-        if self.lap <= 1 or self.lap >= total_race_laps - config.LAST_LAPS_NO_PIT:
+        if self.lap <= 1 or self.lap >= total_race_laps - runtime_config.last_laps_no_pit:
             return False
         
         # Check if past tire cliff
-        cliff_lap = config.TIRE_CLIFF_LAPS.get(self.tire_compound, 20)
+        cliff_lap = runtime_config.tire_cliff_laps.get(self.tire_compound, 20)
         
         # Pit if at or past cliff, with some randomness
         if self.tire_age >= cliff_lap:
-            return random.random() < config.PIT_CHANCE_AFTER_CLIFF
+            return random.random() < runtime_config.pit_chance_after_cliff
         
         # Pit if very close to cliff (within window) with lower probability
-        if self.tire_age >= cliff_lap - config.PIT_WINDOW_LAPS:
-            return random.random() < config.PIT_CHANCE_NEAR_CLIFF
+        if self.tire_age >= cliff_lap - runtime_config.pit_window_laps:
+            return random.random() < runtime_config.pit_chance_near_cliff
         
         return False
 
@@ -199,8 +200,8 @@ class Car:
         self.is_pitting = True
         
         # Calculate pit stop time with variance
-        base_time = config.PIT_STOP_BASE_TIME
-        variance = (random.random() * 2 - 1) * config.PIT_STOP_VARIANCE
+        base_time = runtime_config.pit_stop_base_time
+        variance = (random.random() * 2 - 1) * runtime_config.pit_stop_variance
         self.pit_time_remaining = base_time + variance
         
         self.pit_stops += 1
@@ -245,7 +246,7 @@ class Car:
         # Apply pit stop penalty (reduced speed while "pitting")
         effective_pace = self.current_pace
         if self.is_pitting:
-            effective_pace *= config.PIT_SPEED_PENALTY  # Slow down during pit
+            effective_pace *= runtime_config.pit_speed_penalty  # Slow down during pit
         
         # Move car forward
         speed_per_frame = effective_pace / track.track_length
@@ -263,7 +264,7 @@ class Car:
             self.fuel_load = max(0.0, self.fuel_load - fuel_burn)
 
             # Calculate new lap variance for next lap
-            variance_factor = config.LAP_VARIANCE_BASE * (6 - self.driver_consistency) / 5
+            variance_factor = runtime_config.lap_variance_base * (6 - self.driver_consistency) / 5
             self.current_lap_variance = 1.0 + (random.random() * 2 - 1) * variance_factor
 
             # Record lap time
