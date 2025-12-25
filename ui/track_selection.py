@@ -36,6 +36,11 @@ class TrackSelectionScreen:
         self.selected_index = 0
         self.track_rects = []  # For mouse interaction
         
+        # Scroll state
+        self.scroll_offset = 0  # First visible track index
+        self.max_visible = 8    # Tracks visible at once
+        self.max_scroll = 0     # Calculated when tracks loaded
+        
         # Currently selected track (persisted selection)
         self.current_selection_name = "Default Circuit"
         
@@ -69,6 +74,8 @@ class TrackSelectionScreen:
         
         # Reset selection
         self.selected_index = 0
+        self.scroll_offset = 0
+        self.max_scroll = max(0, len(self.tracks) - self.max_visible)
         
     def set_current_selection(self, track_name):
         """Set the currently selected track (for highlighting when screen opens)"""
@@ -77,6 +84,7 @@ class TrackSelectionScreen:
         for i, track in enumerate(self.tracks):
             if track['name'] == track_name:
                 self.selected_index = i
+                self._ensure_selection_visible()
                 break
     
     def handle_event(self, event):
@@ -93,6 +101,22 @@ class TrackSelectionScreen:
                 self._move_selection(-1)
             elif event.key == pygame.K_DOWN:
                 self._move_selection(1)
+            elif event.key == pygame.K_PAGEUP:
+                if self.tracks:
+                    self.selected_index = max(0, self.selected_index - self.max_visible)
+                    self._ensure_selection_visible()
+            elif event.key == pygame.K_PAGEDOWN:
+                if self.tracks:
+                    self.selected_index = min(len(self.tracks) - 1, self.selected_index + self.max_visible)
+                    self._ensure_selection_visible()
+            elif event.key == pygame.K_HOME:
+                if self.tracks:
+                    self.selected_index = 0
+                    self.scroll_offset = 0
+            elif event.key == pygame.K_END:
+                if self.tracks:
+                    self.selected_index = len(self.tracks) - 1
+                    self.scroll_offset = self.max_scroll
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 self._select_track()  # Just select, don't return
             elif event.key == pygame.K_ESCAPE:
@@ -106,10 +130,13 @@ class TrackSelectionScreen:
             if event.button == 1:  # Left click
                 self._handle_mouse_click(event.pos)  # Just select, don't return
         
+        elif event.type == pygame.MOUSEWHEEL:
+            self._handle_scroll(-event.y)  # Invert for natural scrolling
+        
         return None
     
     def _move_selection(self, direction):
-        """Move track selection up or down"""
+        """Move track selection up or down with auto-scroll"""
         if not self.tracks:
             return
             
@@ -118,10 +145,25 @@ class TrackSelectionScreen:
         # Wrap around
         if new_index < 0:
             new_index = len(self.tracks) - 1
+            self.scroll_offset = self.max_scroll
         elif new_index >= len(self.tracks):
             new_index = 0
+            self.scroll_offset = 0
             
         self.selected_index = new_index
+        self._ensure_selection_visible()
+    
+    def _handle_scroll(self, amount):
+        """Scroll the track list by amount (positive = down, negative = up)"""
+        new_offset = self.scroll_offset + amount
+        self.scroll_offset = max(0, min(self.max_scroll, new_offset))
+    
+    def _ensure_selection_visible(self):
+        """Adjust scroll to keep selected item visible"""
+        if self.selected_index < self.scroll_offset:
+            self.scroll_offset = self.selected_index
+        elif self.selected_index >= self.scroll_offset + self.max_visible:
+            self.scroll_offset = self.selected_index - self.max_visible + 1
     
     def _select_track(self):
         """Mark the currently highlighted track as selected (but don't exit screen)"""
@@ -242,22 +284,23 @@ class TrackSelectionScreen:
         self.selection_surface.blit(subtitle_text, subtitle_rect)
     
     def _draw_track_list(self):
-        """Draw the list of available tracks"""
+        """Draw the list of available tracks with virtual scrolling"""
         center_x = config.SCREEN_WIDTH // 2
         start_y = 220
         item_height = 70
         item_width = 500
         
-        # Clear track rects
-        self.track_rects = []
+        # Pre-allocate track rects for all tracks (None for non-visible)
+        self.track_rects = [None] * len(self.tracks)
         
-        # Calculate visible area
-        max_visible = 8
-        visible_tracks = self.tracks[:max_visible]
+        # Calculate visible range
+        first_visible = self.scroll_offset
+        last_visible = min(len(self.tracks), self.scroll_offset + self.max_visible)
         
-        for i, track in enumerate(visible_tracks):
-            y_pos = start_y + i * item_height
-            is_hovered = (i == self.selected_index)  # Currently hovered/keyboard-selected
+        for display_idx, track_idx in enumerate(range(first_visible, last_visible)):
+            track = self.tracks[track_idx]
+            y_pos = start_y + display_idx * item_height
+            is_hovered = (track_idx == self.selected_index)  # Currently hovered/keyboard-selected
             is_default = track.get('is_default', False)
             is_current_selection = (track['name'] == self.current_selection_name)  # Persisted selection
             
@@ -268,7 +311,7 @@ class TrackSelectionScreen:
                 item_width,
                 item_height - 10
             )
-            self.track_rects.append(item_rect)
+            self.track_rects[track_idx] = item_rect
             
             # Draw background box
             bg_color = (40, 40, 40) if is_hovered else self.color_box_bg
@@ -314,15 +357,33 @@ class TrackSelectionScreen:
             info_text = self.font_track_info.render(info_str, True, self.color_subtitle)
             self.selection_surface.blit(info_text, (item_rect.left + 20, y_pos + 38))
         
-        # Show "more tracks" indicator if needed
-        if len(self.tracks) > max_visible:
-            more_text = self.font_track_info.render(
-                f"+ {len(self.tracks) - max_visible} more tracks...",
-                True,
-                self.color_subtitle
-            )
-            more_rect = more_text.get_rect(center=(center_x, start_y + max_visible * item_height + 10))
-            self.selection_surface.blit(more_text, more_rect)
+        # Draw scroll indicators if there are more tracks than visible
+        if len(self.tracks) > self.max_visible:
+            self._draw_scroll_indicators(center_x, start_y, item_height)
+    
+    def _draw_scroll_indicators(self, center_x, start_y, item_height):
+        """Draw scroll indicators showing more content exists"""
+        indicator_x = center_x + 280
+        
+        # Up arrow if we can scroll up
+        if self.scroll_offset > 0:
+            up_text = self.font_track.render("▲", True, self.color_track)
+            self.selection_surface.blit(up_text, (indicator_x, start_y - 30))
+        
+        # Down arrow if we can scroll down
+        if self.scroll_offset < self.max_scroll:
+            down_y = start_y + self.max_visible * item_height - 10
+            down_text = self.font_track.render("▼", True, self.color_track)
+            self.selection_surface.blit(down_text, (indicator_x, down_y))
+        
+        # Position counter (e.g., "1-8 of 25")
+        first_shown = self.scroll_offset + 1
+        last_shown = min(self.scroll_offset + self.max_visible, len(self.tracks))
+        total = len(self.tracks)
+        position_text = f"{first_shown}-{last_shown} of {total}"
+        pos_render = self.font_track_info.render(position_text, True, self.color_subtitle)
+        pos_rect = pos_render.get_rect(center=(center_x, start_y + self.max_visible * item_height + 20))
+        self.selection_surface.blit(pos_render, pos_rect)
     
     def _draw_footer(self):
         """Draw footer with controls hint"""
@@ -331,7 +392,7 @@ class TrackSelectionScreen:
         
         # Controls hint
         hint_text = self.font_hint.render(
-            "Arrow Keys to navigate  |  Enter to select  |  ESC to confirm & go back",
+            "↑↓/Wheel to scroll  |  Enter to select  |  PgUp/PgDn for pages  |  ESC to confirm",
             True,
             self.color_subtitle
         )
