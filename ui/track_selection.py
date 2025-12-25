@@ -3,7 +3,7 @@ Track Selection Screen - Browse and select tracks for racing
 """
 import pygame
 import config
-from race.track_loader import get_available_tracks, load_track_waypoints, get_default_waypoints
+from race.track_loader import get_available_tracks, load_track_waypoints, load_track_with_decorations, get_default_waypoints
 
 
 class TrackSelectionScreen:
@@ -39,8 +39,9 @@ class TrackSelectionScreen:
         # Currently selected track (persisted selection)
         self.current_selection_name = "Default Circuit"
         
-        # Pending waypoints for the current selection (loaded when track is selected)
+        # Pending waypoints and decorations for the current selection (loaded when track is selected)
         self._pending_waypoints = None
+        self._pending_decorations = None
         
         # Colors for selected indicator
         self.color_selected_badge = (0, 180, 80)  # Green for "SELECTED" badge
@@ -95,8 +96,8 @@ class TrackSelectionScreen:
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 self._select_track()  # Just select, don't return
             elif event.key == pygame.K_ESCAPE:
-                # Return selection when exiting
-                return ("select", self.current_selection_name, self._pending_waypoints)
+                # Return selection when exiting (waypoints, decorations)
+                return ("select", self.current_selection_name, self._pending_waypoints, self._pending_decorations)
                 
         elif event.type == pygame.MOUSEMOTION:
             self._handle_mouse_hover(event.pos)
@@ -133,16 +134,19 @@ class TrackSelectionScreen:
         # Update current selection name
         self.current_selection_name = track_name
         
-        # Load and store waypoints for when we exit
+        # Load and store waypoints and decorations for when we exit
         if track.get('is_default') or track.get('filepath') is None:
             self._pending_waypoints = None  # None means use default
+            self._pending_decorations = None
         else:
-            waypoints = load_track_waypoints(track['filepath'])
+            waypoints, decorations = load_track_with_decorations(track['filepath'])
             if waypoints is None:
                 # Fallback to default if loading fails
                 self._pending_waypoints = None
+                self._pending_decorations = None
             else:
                 self._pending_waypoints = waypoints
+                self._pending_decorations = decorations
     
     def _handle_mouse_hover(self, pos):
         """Update hover state based on mouse position"""

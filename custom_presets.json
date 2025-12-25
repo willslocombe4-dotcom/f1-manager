@@ -1,0 +1,45 @@
+[
+  {
+    "name": "bob",
+    "description": "testing",
+    "settings": {
+      "race_laps": 70,
+      "simulation_speed": 20,
+      "tire_deg_rates": {
+        "SOFT": 0.006,
+        "MEDIUM": 0.002,
+        "HARD": 0.0015
+      },
+      "tire_cliff_laps": {
+        "SOFT": 5,
+        "MEDIUM": 12,
+        "HARD": 40
+      },
+      "tire_cliff_penalty": 0.25,
+      "max_tire_penalty": 0.2,
+      "fuel_start_penalty": 0.1,
+      "fuel_burn_per_lap": 0.004,
+      "pit_stop_base_time": 8.0,
+      "pit_stop_variance": 3.0,
+      "pit_speed_penalty": 0.3,
+      "pit_window_laps": 4,
+      "pit_chance_after_cliff": 0.8,
+      "pit_chance_near_cliff": 0.49999999999999994,
+      "last_laps_no_pit": 3,
+      "tier_modifiers": {
+        "S": 1.1,
+        "A": 1.06,
+        "B": 1.04,
+        "C": 1.02,
+        "D": 1.0
+      },
+      "synergy_modifiers": {
+        "high": 1.05,
+        "neutral": 1.0,
+        "low": 0.95
+      },
+      "lap_variance_base": 0.015
+    },
+    "custom": true
+  }
+]

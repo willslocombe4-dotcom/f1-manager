@@ -4,10 +4,37 @@ F1 Track - Circuit layout and waypoint generation
 import math
 import config
 
+
+def normalize_angle(angle):
+    """Normalize angle to [-pi, pi] range"""
+    while angle > math.pi:
+        angle -= 2 * math.pi
+    while angle < -math.pi:
+        angle += 2 * math.pi
+    return angle
+
+
+def get_angle_between_segments(p1, p2, p3):
+    """
+    Calculate the signed angle change at p2 between segments p1->p2 and p2->p3.
+    Positive = left turn (CCW), Negative = right turn (CW)
+    Returns angle in radians.
+    """
+    dx1 = p2[0] - p1[0]
+    dy1 = p2[1] - p1[1]
+    dx2 = p3[0] - p2[0]
+    dy2 = p3[1] - p2[1]
+    
+    angle1 = math.atan2(dy1, dx1)
+    angle2 = math.atan2(dy2, dx2)
+    
+    return normalize_angle(angle2 - angle1)
+
+
 class Track:
     """Represents an F1 circuit with waypoints for car movement"""
 
-    def __init__(self, waypoints=None):
+    def __init__(self, waypoints=None, decorations=None):
         self.center_x = config.TRACK_CENTER_X
         self.center_y = config.TRACK_CENTER_Y
         self.outer_radius = config.TRACK_OUTER_RADIUS
@@ -20,6 +47,11 @@ class Track:
         else:
             self.waypoints = self._generate_waypoints()
         self.track_length = len(self.waypoints)
+        
+        # Decorations (kerbs and gravel traps)
+        # Format: {'kerbs': [{'boundary': 'left'|'right', 'start': int, 'end': int}, ...],
+        #          'gravel': [{'boundary': 'left'|'right', 'start': int, 'end': int}, ...]}
+        self.decorations = decorations or {'kerbs': [], 'gravel': []}
 
     def _generate_waypoints(self):
         """
@@ -165,28 +197,148 @@ class Track:
 
     def get_track_boundaries(self, track_width=35):
         """
-        Calculate outer and inner track boundaries
-        Returns tuple of (outer_points, inner_points)
+        Calculate left and right track boundaries using averaged perpendicular offsets.
+        
+        The track is defined by waypoints that form the racing line (center).
+        - left_boundary: boundary on the LEFT side of the racing line direction
+        - right_boundary: boundary on the RIGHT side of the racing line direction
+        
+        Uses a simple bevel-style join (averaged perpendiculars) which avoids
+        the complexity and edge cases of miter joins at sharp corners.
+        
+        Returns tuple of (left_boundary, right_boundary)
         """
-        outer_points = []
-        inner_points = []
-
-        for i, (x, y) in enumerate(self.waypoints):
-            # Get direction to next point
+        if len(self.waypoints) < 3:
+            return [], []
+        
+        left_boundary = []
+        right_boundary = []
+        
+        for i in range(len(self.waypoints)):
+            prev_i = (i - 1) % len(self.waypoints)
             next_i = (i + 1) % len(self.waypoints)
-            next_x, next_y = self.waypoints[next_i]
+            
+            p_prev = self.waypoints[prev_i]
+            p_curr = self.waypoints[i]
+            p_next = self.waypoints[next_i]
+            
+            # Direction vectors
+            dx1 = p_curr[0] - p_prev[0]
+            dy1 = p_curr[1] - p_prev[1]
+            dx2 = p_next[0] - p_curr[0]
+            dy2 = p_next[1] - p_curr[1]
+            
+            # Normalize
+            len1 = math.sqrt(dx1*dx1 + dy1*dy1)
+            len2 = math.sqrt(dx2*dx2 + dy2*dy2)
+            if len1 > 0:
+                dx1, dy1 = dx1/len1, dy1/len1
+            if len2 > 0:
+                dx2, dy2 = dx2/len2, dy2/len2
+            
+            # Perpendiculars (pointing LEFT)
+            perp1_x, perp1_y = -dy1, dx1
+            perp2_x, perp2_y = -dy2, dx2
+            
+            # Average perpendicular (bevel join)
+            avg_x = perp1_x + perp2_x
+            avg_y = perp1_y + perp2_y
+            avg_len = math.sqrt(avg_x*avg_x + avg_y*avg_y)
+            
+            if avg_len > 0.001:
+                avg_x, avg_y = avg_x/avg_len, avg_y/avg_len
+            else:
+                avg_x, avg_y = perp1_x, perp1_y
+            
+            # Offset points
+            left_boundary.append((p_curr[0] + avg_x * track_width, p_curr[1] + avg_y * track_width))
+            right_boundary.append((p_curr[0] - avg_x * track_width, p_curr[1] - avg_y * track_width))
+        
+        return left_boundary, right_boundary
 
-            dx = next_x - x
-            dy = next_y - y
-            length = math.sqrt(dx * dx + dy * dy)
+    def get_boundary_points_for_range(self, boundary, start, end, track_width=35):
+        """
+        Get boundary points for a segment range.
+        
+        Args:
+            boundary: 'left' or 'right'
+            start: Starting segment index
+            end: Ending segment index
+            track_width: Width of track from center to boundary
+            
+        Returns:
+            list: List of (x, y) points from the specified boundary
+        """
+        left_boundary, right_boundary = self.get_track_boundaries(track_width)
+        boundary_points = left_boundary if boundary == 'left' else right_boundary
+        
+        if not boundary_points:
+            return []
+        
+        points = []
+        i = start
+        while True:
+            if i < len(boundary_points):
+                points.append(boundary_points[i])
+            if i == end:
+                break
+            i = (i + 1) % len(self.waypoints)
+        
+        return points
 
-            if length > 0:
-                # Perpendicular direction
-                perp_x = -dy / length
-                perp_y = dx / length
+    def get_gravel_strip_points(self, boundary, start, end, track_width=35, extension=25):
+        """
+        Get inner and outer points for a gravel strip polygon.
+        
+        Args:
+            boundary: 'left' or 'right'
+            start: Starting segment index
+            end: Ending segment index
+            track_width: Width of track from center to boundary
+            extension: How far gravel extends beyond track boundary
+            
+        Returns:
+            tuple: (inner_points, outer_points) where each is a list of (x, y) tuples
+        """
+        left_boundary, right_boundary = self.get_track_boundaries(track_width)
+        boundary_points = left_boundary if boundary == 'left' else right_boundary
+        
+        if not boundary_points:
+            return [], []
+        
+        inner_points = []
+        outer_points = []
+        
+        i = start
+        while True:
+            if i < len(boundary_points) and i < len(self.waypoints):
+                bx, by = boundary_points[i]
+                wx, wy = self.waypoints[i]
+                
+                # Direction from waypoint to boundary
+                dx = bx - wx
+                dy = by - wy
+                length = math.sqrt(dx*dx + dy*dy)
+                
+                if length > 0:
+                    inner_points.append((bx, by))
+                    
+                    # Extend beyond boundary
+                    gx = bx + (dx / length) * extension
+                    gy = by + (dy / length) * extension
+                    outer_points.append((gx, gy))
+            
+            if i == end:
+                break
+            i = (i + 1) % len(self.waypoints)
+        
+        return inner_points, outer_points
 
-                # Outer and inner points
-                outer_points.append((x + perp_x * track_width, y + perp_y * track_width))
-                inner_points.append((x - perp_x * track_width, y - perp_y * track_width))
-
-        return outer_points, inner_points
+    def has_explicit_decorations(self):
+        """
+        Check if track has explicit decorations defined.
+        
+        Returns:
+            bool: True if decorations are defined, False otherwise
+        """
+        return bool(self.decorations.get('kerbs') or self.decorations.get('gravel'))

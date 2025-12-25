@@ -36,12 +36,14 @@ class F1Manager:
         self.running = True
         self.paused = False
         
-        # Current track waypoints (None = default)
+        # Current track waypoints and decorations (None = default)
         self.current_waypoints = None
+        self.current_decorations = None
         
         # Selected track from Track Selection
         self.selected_track_name = "Default Circuit"  # Track name for display
         self.selected_waypoints = None  # Waypoints for race (None = default)
+        self.selected_decorations = None  # Decorations for race (None = default)
 
         # Initialize UI components (always available)
         self.main_menu = MainMenu(self.screen)
@@ -58,10 +60,11 @@ class F1Manager:
         # Load saved settings on startup
         SettingsPersistence.load(runtime_config)
 
-    def _start_race(self, waypoints=None):
-        """Initialize and start a race with optional custom waypoints"""
+    def _start_race(self, waypoints=None, decorations=None):
+        """Initialize and start a race with optional custom waypoints and decorations"""
         self.current_waypoints = waypoints
-        self.race_engine = RaceEngine(waypoints=waypoints)
+        self.current_decorations = decorations
+        self.race_engine = RaceEngine(waypoints=waypoints, decorations=decorations)
         self.track_renderer = TrackRenderer(self.screen)
         self.timing_screen = TimingScreen(self.screen)
         self.results_screen = ResultsScreen(self.screen)
@@ -108,7 +111,7 @@ class F1Manager:
         action = self.main_menu.handle_event(event)
         
         if action == "quick_race":
-            self._start_race(waypoints=self.selected_waypoints)  # Use selected track or default
+            self._start_race(waypoints=self.selected_waypoints, decorations=self.selected_decorations)  # Use selected track or default
         elif action == "track_selection":
             self.track_selection.refresh_tracks()
             self.track_selection.set_current_selection(self.selected_track_name)
@@ -123,9 +126,10 @@ class F1Manager:
         result = self.track_selection.handle_event(event)
         
         if isinstance(result, tuple) and result[0] == "select":
-            # ESC was pressed - store selected track name and waypoints, return to menu
+            # ESC was pressed - store selected track name, waypoints, and decorations, return to menu
             self.selected_track_name = result[1]
             self.selected_waypoints = result[2]
+            self.selected_decorations = result[3] if len(result) > 3 else None
             self.main_menu.set_selected_track(self.selected_track_name)
             self.state = config.GAME_STATE_MENU
 
@@ -156,7 +160,7 @@ class F1Manager:
 
             elif event.key == pygame.K_r:
                 # Restart race with same track
-                self._start_race(waypoints=self.current_waypoints)
+                self._start_race(waypoints=self.current_waypoints, decorations=self.current_decorations)
 
             # Speed control keys (1-5)
             elif event.key == pygame.K_1:
@@ -189,7 +193,7 @@ class F1Manager:
             
             elif event.key == pygame.K_r:
                 # Restart race with same track
-                self._start_race(waypoints=self.current_waypoints)
+                self._start_race(waypoints=self.current_waypoints, decorations=self.current_decorations)
                 return
             
             # Scroll events

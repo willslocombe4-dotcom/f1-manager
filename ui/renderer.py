@@ -71,71 +71,72 @@ class TrackRenderer:
             return surface
 
         # Get track boundaries
-        outer_points, inner_points = track.get_track_boundaries(track_width)
+        left_boundary, right_boundary = track.get_track_boundaries(track_width)
 
-        # LAYER 1: Two-tone grass background
-        surface.fill(config.GRASS_BASE_COLOR)
+        # LAYER 1: Background - plain dark, no auto-decorations
+        # All decorations are now explicit via track_decorator tool
+        surface.fill(config.TRACK_BG_COLOR)
 
-        # Add lighter grass patches for visual variety (fixed seed for consistency)
-        random.seed(42)
-        for _ in range(5):
-            patch_points = []
-            center_x = random.randint(100, config.TRACK_VIEW_WIDTH - 100)
-            center_y = random.randint(200, config.SCREEN_HEIGHT - 200)
-            radius = random.randint(80, 150)
-            for angle in range(0, 360, 30):
-                rad = math.radians(angle)
-                px = center_x + math.cos(rad) * radius
-                py = center_y + math.sin(rad) * radius
-                patch_points.append((px, py))
-            if len(patch_points) >= 3:
-                pygame.draw.polygon(surface, config.GRASS_LIGHT_COLOR, patch_points)
+        # LAYER 1.5: Grass (only if track has explicit decorations)
+        # Grass is drawn first (behind gravel) so it appears as background
+        if hasattr(track, 'decorations') and track.decorations:
+            for grass in track.decorations.get('grass', []):
+                self._draw_grass_range(
+                    surface, track, grass['boundary'],
+                    grass['start'], grass['end'], track_width
+                )
 
-        # LAYER 2: Gravel traps at corners (on outside of each turn)
-        corner_indices = track.get_corner_indices(curvature_threshold=15)
-        for corner_idx in corner_indices:
-            self._draw_gravel_trap(surface, waypoints, outer_points, inner_points, corner_idx, track_width)
+        # LAYER 2: Gravel traps (only if track has explicit decorations)
+        # Auto-generation disabled - use track_decorator tool to add decorations
+        if hasattr(track, 'decorations') and track.decorations:
+            for gravel in track.decorations.get('gravel', []):
+                self._draw_gravel_range(
+                    surface, track, gravel['boundary'],
+                    gravel['start'], gravel['end'], track_width
+                )
 
         # LAYER 3: Track surface
-        # Draw track as individual segments to avoid polygon fill issues
-        # at sharp corners where boundaries may self-intersect
-        if len(outer_points) >= 3 and len(inner_points) >= 3:
-            num_points = len(outer_points)
+        # Simple quad rendering - bevel joins don't need validation
+        if len(left_boundary) >= 3 and len(right_boundary) >= 3:
+            num_points = len(left_boundary)
             for i in range(num_points):
                 next_i = (i + 1) % num_points
-                # Create a quad for each track segment
-                segment_quad = [
-                    outer_points[i],
-                    outer_points[next_i],
-                    inner_points[next_i],
-                    inner_points[i]
-                ]
-                pygame.draw.polygon(surface, config.TRACK_COLOR, segment_quad)
-
+                quad = [left_boundary[i], left_boundary[next_i], right_boundary[next_i], right_boundary[i]]
+                pygame.draw.polygon(surface, config.TRACK_COLOR, quad)
+            
             # Track edges (white lines)
-            pygame.draw.lines(surface, (200, 200, 200), True, outer_points, 2)
-            pygame.draw.lines(surface, (200, 200, 200), True, inner_points, 2)
+            pygame.draw.lines(surface, (200, 200, 200), True, left_boundary, 2)
+            pygame.draw.lines(surface, (200, 200, 200), True, right_boundary, 2)
 
-        # LAYER 4: Kerbs at corners
-        for corner_idx in corner_indices:
-            self._draw_kerbs(surface, waypoints, inner_points, corner_idx)
+        # LAYER 4: Kerbs at corners (only if track has explicit decorations)
+        # Auto-generation disabled - use track_decorator tool to add decorations
+        if hasattr(track, 'decorations') and track.decorations:
+            for kerb in track.decorations.get('kerbs', []):
+                self._draw_kerb_range(
+                    surface, track, kerb['boundary'],
+                    kerb['start'], kerb['end'], track_width
+                )
 
-        # LAYER 5: Checkered start/finish line
-        self._draw_checkered_start_line(surface, waypoints, track_width)
+        # LAYER 5: Checkered start/finish line (only if track has explicit start_line decoration)
+        if hasattr(track, 'decorations') and track.decorations.get('start_line'):
+            start_line = track.decorations['start_line']
+            self._draw_checkered_start_line(surface, waypoints, track_width, start_line.get('segment', 0))
+        # If no explicit start_line, don't draw one - user controls everything
 
-        # LAYER 6: Racing line (dashed center line)
-        for i in range(0, len(waypoints) - 1, 2):
-            pygame.draw.line(
-                surface,
-                config.TRACK_LINE_COLOR,
-                waypoints[i],
-                waypoints[min(i + 1, len(waypoints) - 1)],
-                1
-            )
+        # LAYER 6: Racing line - only if explicitly enabled in decorations
+        if hasattr(track, 'decorations') and track.decorations.get('racing_line'):
+            for i in range(0, len(waypoints) - 1, 2):
+                pygame.draw.line(
+                    surface,
+                    config.TRACK_LINE_COLOR,
+                    waypoints[i],
+                    waypoints[min(i + 1, len(waypoints) - 1)],
+                    1
+                )
 
         return surface
 
-    def _draw_gravel_trap(self, surface, waypoints, outer_points, inner_points, corner_idx, track_width):
+    def _draw_gravel_trap(self, surface, waypoints, left_boundary, right_boundary, corner_idx, track_width):
         """Draw gravel trap on outside of corner (correct side based on turn direction)"""
         # Determine turn direction at this corner using cross product
         prev_idx = (corner_idx - 1) % len(waypoints)
@@ -149,12 +150,13 @@ class TrackRenderer:
         cross = (x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2)
         
         # Choose which boundary is the OUTSIDE of the turn
-        # For left turns (cross > 0): outer_points is the outside
-        # For right turns (cross < 0): inner_points is the outside
+        # For a clockwise track: left_boundary = outer loop, right_boundary = inner loop
+        # Left turn (cross > 0): outside is toward OUTER loop = left_boundary
+        # Right turn (cross < 0): outside is toward INNER loop = right_boundary
         if cross > 0:
-            boundary_points = outer_points
+            boundary_points = left_boundary   # Left turn: outside toward outer loop
         else:
-            boundary_points = inner_points
+            boundary_points = right_boundary  # Right turn: outside toward inner loop
         
         gravel_outer_points = []  # Extended points (outer edge of gravel)
         gravel_inner_points = []  # Track boundary edge (inner edge of gravel)
@@ -193,35 +195,143 @@ class TrackRenderer:
             # Draw border only on outer edge
             pygame.draw.lines(surface, config.GRAVEL_BORDER_COLOR, False, gravel_outer_points, 3)
 
-    def _draw_kerbs(self, surface, waypoints, inner_points, corner_idx):
-        """Draw red and white striped kerbs at corner"""
-        extend_range = 3  # Waypoints before/after corner
+    def _draw_kerbs(self, surface, waypoints, left_boundary, right_boundary, corner_idx):
+        """
+        Draw kerb segments on the INSIDE (apex) of corners.
+        
+        Left turn (positive angle): apex is on LEFT side (left_boundary)
+        Right turn (negative angle): apex is on RIGHT side (right_boundary)
+        """
+        from race.track import get_angle_between_segments
+        
+        # Check if this is a significant corner
+        prev_idx = (corner_idx - 1) % len(waypoints)
+        next_idx = (corner_idx + 1) % len(waypoints)
+        
+        corner_angle = get_angle_between_segments(
+            waypoints[prev_idx], waypoints[corner_idx], waypoints[next_idx]
+        )
+        
+        # Only draw kerbs for significant corners (> 30 degrees)
+        if abs(corner_angle) < math.radians(30):
+            return
+        
+        # Choose the INSIDE boundary (apex side)
+        # For a clockwise track (which this is, based on boundary test):
+        # - Left turn (angle > 0): apex is on RIGHT side (toward inner loop)
+        # - Right turn (angle < 0): apex is on LEFT side (toward outer loop)
+        # This matches the gravel trap logic which uses cross product correctly.
+        if corner_angle > 0:
+            boundary_points = right_boundary  # Left turn: apex on RIGHT (inner)
+        else:
+            boundary_points = left_boundary   # Right turn: apex on LEFT (outer)
+        
         stripe_count = 0
-
-        for offset in range(-extend_range, extend_range + 1):
+        for offset in range(0, 2):  # Just 2 segments
             idx = (corner_idx + offset) % len(waypoints)
-            next_idx = (idx + 1) % len(waypoints)
+            next_wp_idx = (idx + 1) % len(waypoints)
+            
+            if idx >= len(boundary_points) or next_wp_idx >= len(boundary_points):
+                continue
+            
+            bx1, by1 = boundary_points[idx]
+            bx2, by2 = boundary_points[next_wp_idx]
+            
+            # Alternate red and white
+            color = config.KERB_RED if stripe_count % 2 == 0 else config.KERB_WHITE
+            pygame.draw.line(surface, color, (bx1, by1), (bx2, by2), config.KERB_WIDTH)
+            stripe_count += 1
 
-            if idx < len(inner_points) and next_idx < len(inner_points):
-                # Get inner edge points
-                x1, y1 = inner_points[idx]
-                x2, y2 = inner_points[next_idx]
+    def _draw_kerb_range(self, surface, track, boundary, start, end, track_width=35):
+        """
+        Draw alternating red/white kerb stripes for an explicit segment range.
+        
+        Args:
+            surface: pygame surface to draw on
+            track: Track object
+            boundary: 'left' or 'right'
+            start: Starting segment index
+            end: Ending segment index
+            track_width: Width of track from center to boundary
+        """
+        boundary_points = track.get_boundary_points_for_range(boundary, start, end, track_width)
+        
+        if len(boundary_points) < 2:
+            return
+        
+        # Draw alternating stripes
+        for i in range(len(boundary_points) - 1):
+            p1 = boundary_points[i]
+            p2 = boundary_points[i + 1]
+            
+            # Alternate red and white
+            color = config.KERB_RED if i % 2 == 0 else config.KERB_WHITE
+            pygame.draw.line(surface, color, p1, p2, config.KERB_WIDTH)
 
-                # Alternate red and white
-                color = config.KERB_RED if stripe_count % 2 == 0 else config.KERB_WHITE
+    def _draw_gravel_range(self, surface, track, boundary, start, end, track_width=35):
+        """
+        Draw gravel strip polygon for an explicit segment range.
+        
+        Args:
+            surface: pygame surface to draw on
+            track: Track object
+            boundary: 'left' or 'right'
+            start: Starting segment index
+            end: Ending segment index
+            track_width: Width of track from center to boundary
+        """
+        inner_points, outer_points = track.get_gravel_strip_points(
+            boundary, start, end, track_width, extension=25
+        )
+        
+        if len(outer_points) < 3 or len(inner_points) < 3:
+            return
+        
+        # Create closed polygon: outer edge forward, then inner edge backward
+        gravel_polygon = outer_points + inner_points[::-1]
+        
+        # Draw gravel fill
+        pygame.draw.polygon(surface, config.GRAVEL_COLOR, gravel_polygon)
+        # Draw border only on outer edge
+        pygame.draw.lines(surface, config.GRAVEL_BORDER_COLOR, False, outer_points, 3)
 
-                # Draw kerb stripe along inner edge
-                pygame.draw.line(surface, color, (x1, y1), (x2, y2), config.KERB_WIDTH)
+    def _draw_grass_range(self, surface, track, boundary, start, end, track_width=35):
+        """
+        Draw grass strip polygon for an explicit segment range.
+        
+        Args:
+            surface: pygame surface to draw on
+            track: Track object
+            boundary: 'left' or 'right'
+            start: Starting segment index
+            end: Ending segment index
+            track_width: Width of track from center to boundary
+        """
+        # Grass extends further than gravel (50px vs 25px)
+        inner_points, outer_points = track.get_gravel_strip_points(
+            boundary, start, end, track_width, extension=50
+        )
+        
+        if len(outer_points) < 3 or len(inner_points) < 3:
+            return
+        
+        # Create closed polygon: outer edge forward, then inner edge backward
+        grass_polygon = outer_points + inner_points[::-1]
+        
+        # Draw grass fill (no border for grass - it blends naturally)
+        pygame.draw.polygon(surface, config.GRASS_COLOR, grass_polygon)
 
-                stripe_count += 1
-
-    def _draw_checkered_start_line(self, surface, waypoints, track_width):
+    def _draw_checkered_start_line(self, surface, waypoints, track_width, segment=0):
         """Draw checkered flag pattern at start/finish line"""
         if len(waypoints) < 2:
             return
 
-        start_x, start_y = waypoints[0]
-        next_x, next_y = waypoints[1]
+        # Use specified segment for start line position
+        idx = segment % len(waypoints)
+        next_idx = (idx + 1) % len(waypoints)
+        
+        start_x, start_y = waypoints[idx]
+        next_x, next_y = waypoints[next_idx]
 
         # Get perpendicular direction
         dx = next_x - start_x

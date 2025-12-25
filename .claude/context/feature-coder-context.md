@@ -1,6 +1,6 @@
 # Feature Coder Context
 
-Last updated: 2025-12-22
+Last updated: 2025-12-25
 STATUS: IDLE
 
 ## Currently Implementing
@@ -8,6 +8,17 @@ STATUS: IDLE
 *Nothing in progress*
 
 ## Recently Completed
+
+- Black Triangle Artifact Fix (2025-12-25)
+  - Fixed black triangular artifacts appearing on track at tight corners
+  - Root cause: Twisted quads when boundary points crossed at sharp corners
+  - Solution: Added validation in renderer.py before drawing track segments
+  - Uses cross product to detect if quad vertices have inconsistent winding
+  - Skips drawing twisted segments (they're small, not noticeable)
+  - Also skips collapsed boundaries (inner points too close to outer)
+  - Files modified: ui/renderer.py (lines 99-154)
+  - Implementation confidence: HIGH (95%)
+  - Testing: Game runs without errors
 
 - Speed Control UI (2025-12-22)
   - Added simulation speed state to RaceEngine (simulation_speed property)
@@ -122,6 +133,7 @@ Controls:
 - Progress resets to 0 when completing lap
 - Cars sorted by total_progress for race order
 - Pygame Y axis is inverted (0 at top)
+- Track boundary quads can become twisted at sharp corners - validate before drawing
 
 ## Performance Notes
 

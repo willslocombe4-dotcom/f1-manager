@@ -41,9 +41,20 @@ If you catch yourself about to write code, STOP and call @f1-builder instead.
 
 ## Current Pipeline
 
-**Status:** IDLE
-**Feature:** None
-**Current Agent:** None
+**Status:** BLOCKED - NEEDS DESIGN
+**Feature:** Track Rendering - Kerb Positioning Bug
+**Current Agent:** None (routing to @f1-designer)
+
+### Issue Summary
+Kerbs are being drawn across the racing line at tight hairpin corners. Multiple fix attempts failed:
+1. ❌ Turn direction detection (cross product) - didn't help
+2. ❌ Distance checks (max 50-60px from racing line) - didn't catch it
+3. ❌ Line segment intersection test - didn't catch it
+4. ❌ Per-waypoint side check (cross product) - didn't catch it
+
+**Root cause:** At tight hairpins, the boundary calculation in `track.py` `get_track_boundaries()` produces points that fold over the racing line. The perpendicular offset at each waypoint points in wildly different directions at tight corners.
+
+**Needs:** Design-level rethink of how kerbs are rendered at tight corners.
 
 ---
 

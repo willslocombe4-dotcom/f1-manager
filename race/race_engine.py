@@ -11,8 +11,8 @@ from settings.runtime_config import runtime_config
 class RaceEngine:
     """Manages the entire race simulation"""
 
-    def __init__(self, waypoints=None):
-        self.track = Track(waypoints=waypoints)
+    def __init__(self, waypoints=None, decorations=None):
+        self.track = Track(waypoints=waypoints, decorations=decorations)
         self.cars = []
         self.race_started = False
         self.race_time = 0.0

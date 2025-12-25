@@ -76,11 +76,13 @@ TIRE_COLORS = {
 # Track visual elements
 GRASS_BASE_COLOR = (30, 80, 30)
 GRASS_LIGHT_COLOR = (40, 100, 40)
+GRASS_COLOR = (34, 139, 34)  # Forest green for explicit grass decorations
 GRAVEL_COLOR = (194, 178, 128)
 GRAVEL_BORDER_COLOR = (170, 155, 110)
 KERB_RED = (200, 0, 0)
 KERB_WHITE = (255, 255, 255)
 KERB_WIDTH = 8  # Width of kerb stripes
+KERB_MIN_CORNER_ANGLE = 30  # Degrees - minimum corner angle to draw kerbs at all
 
 # =============================================================================
 # PHASE 1: RACE SIMULATION PHYSICS

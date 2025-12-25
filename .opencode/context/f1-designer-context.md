@@ -17,8 +17,9 @@ Ideas saved for later implementation:
 | 5 | Tire Wear Bar on Timing Screen | LOW | SMALL | 2025-12-24 | Pending | #1 |
 | 6 | Main Menu + Settings System | HIGH | HIGH | 2025-12-24 | Pending | — |
 | 7 | Career Mode (23 sub-phases) | HIGH | MASSIVE | 2025-12-24 | Pending | **#6** |
+| 8 | Smart Track Boundaries (Kerb Fix) | HIGH | MEDIUM | 2025-12-25 | Pending | — |
 
-**Total Ideas:** 7 (1 complete, 6 pending)
+**Total Ideas:** 8 (1 complete, 7 pending)
 
 ---
 
@@ -2946,6 +2947,176 @@ ui/
 
 ---
 
+#### #8: Smart Track Boundaries (Kerb Fix)
+**Priority:** HIGH | **Complexity:** MEDIUM | **Est. Sessions:** 2-3
+
+**The Problem:**
+Track boundaries fold over at tight hairpin corners. The current `get_track_boundaries()` uses naive perpendicular offsets from each waypoint. At sharp corners, the inner boundary points cross over each other because perpendicular vectors from adjacent waypoints point in conflicting directions. This causes:
+- Kerbs rendering across the racing line at hairpins
+- Gravel traps with self-intersecting polygons
+- Visual glitches at any corner sharper than ~60°
+
+**The Solution:**
+Arc interpolation on inner boundaries at sharp corners. Instead of a single offset point that crosses over, insert multiple points along an arc that follows the corner's natural curve.
+
+**Design Decisions:**
+- **Arc interpolation** chosen over miter/bevel because kerbs should look smooth and follow the corner curve (like real F1 kerbs)
+- **Fix in `get_track_boundaries()`** rather than separate method — one fix benefits kerbs, gravel traps, and track surface rendering
+- **Inner boundary only** needs arc treatment — outer boundary at hairpins has plenty of room and doesn't fold over
+- **Configurable corner resolution** — allow tuning how many arc points to insert
+
+**How It Works:**
+
+```python
+def get_track_boundaries(self, track_width=35, corner_resolution=3):
+    """
+    Calculate outer and inner track boundaries with smart corner handling.
+    
+    At sharp corners (angle change > threshold):
+    - Outer boundary: miter with limit (extend lines to meet, cap if too long)
+    - Inner boundary: arc interpolation (insert corner_resolution points along arc)
+    
+    Returns: (outer_points, inner_points)
+    Note: inner_points may have MORE points than waypoints at sharp corners
+    """
+    outer_points = []
+    inner_points = []
+    
+    angle_threshold = math.radians(45)  # Corners sharper than 45° get special handling
+    
+    for i, (x, y) in enumerate(self.waypoints):
+        prev_i = (i - 1) % len(self.waypoints)
+        next_i = (i + 1) % len(self.waypoints)
+        
+        # Calculate angle change at this waypoint
+        angle_in = math.atan2(y - self.waypoints[prev_i][1], 
+                              x - self.waypoints[prev_i][0])
+        angle_out = math.atan2(self.waypoints[next_i][1] - y,
+                               self.waypoints[next_i][0] - x)
+        angle_change = normalize_angle(angle_out - angle_in)
+        
+        # Determine turn direction (positive = left turn, negative = right turn)
+        is_left_turn = angle_change > 0
+        
+        # Calculate perpendicular directions
+        perp_in = angle_in + math.pi/2
+        perp_out = angle_out + math.pi/2
+        
+        if abs(angle_change) < angle_threshold:
+            # Mild corner: standard perpendicular offset (current behavior)
+            # Average the two perpendicular directions for smoother result
+            avg_perp = (perp_in + perp_out) / 2
+            outer_points.append((x + math.cos(avg_perp) * track_width,
+                                y + math.sin(avg_perp) * track_width))
+            inner_points.append((x - math.cos(avg_perp) * track_width,
+                                y - math.sin(avg_perp) * track_width))
+        else:
+            # Sharp corner: special handling
+            
+            # OUTER BOUNDARY: Miter join (extend lines until they meet)
+            # Calculate intersection of offset lines
+            outer_point = calculate_miter_point(...)  # With limit to prevent spikes
+            outer_points.append(outer_point)
+            
+            # INNER BOUNDARY: Arc interpolation
+            # Insert multiple points along an arc from perp_in to perp_out
+            arc_center = (x, y)  # Corner apex
+            arc_radius = track_width
+            
+            # Generate arc points
+            for j in range(corner_resolution + 1):
+                t = j / corner_resolution
+                arc_angle = lerp_angle(perp_in + math.pi, perp_out + math.pi, t)
+                arc_x = x + math.cos(arc_angle) * arc_radius
+                arc_y = y + math.sin(arc_angle) * arc_radius
+                inner_points.append((arc_x, arc_y))
+    
+    return outer_points, inner_points
+```
+
+**Visual Explanation:**
+
+```
+BEFORE (current - folds over):
+
+    Racing Line
+        │
+   ─────●─────  Waypoint at hairpin
+       /│\
+      / │ \     Perpendicular offsets
+     /  │  \    cross each other
+    X───┼───X   ← Inner points CROSSED
+        │
+    Outer points (fine)
+
+
+AFTER (arc interpolation):
+
+    Racing Line
+        │
+   ─────●─────  Waypoint at hairpin
+       /│\
+      / │ \     
+     /  │  \    
+    ●   │   ●   ← Outer points (miter join)
+        │
+      ╭─●─╮     ← Inner points follow ARC
+     ╱     ╲       (multiple points inserted)
+    ●       ●
+```
+
+**Files Changed:**
+
+| File | Change |
+|------|--------|
+| `race/track.py` | Rewrite `get_track_boundaries()` with corner-aware logic |
+| `ui/renderer.py` | Remove hacky cross-product skip in `_draw_kerbs()` — boundaries will be correct |
+
+**Helper Functions Needed:**
+
+```python
+def normalize_angle(angle):
+    """Normalize angle to [-pi, pi] range"""
+    while angle > math.pi:
+        angle -= 2 * math.pi
+    while angle < -math.pi:
+        angle += 2 * math.pi
+    return angle
+
+def lerp_angle(a, b, t):
+    """Linearly interpolate between two angles, handling wraparound"""
+    diff = normalize_angle(b - a)
+    return a + diff * t
+
+def calculate_miter_point(p1, angle1, p2, angle2, max_miter_length):
+    """
+    Calculate where two offset lines intersect.
+    If intersection is too far (> max_miter_length), return bevel point instead.
+    """
+    # Line intersection math...
+    # If miter_length > max_miter_length: return midpoint (bevel)
+    pass
+```
+
+**Acceptance Criteria:**
+- [ ] Kerbs render correctly at all hairpin corners (no crossing racing line)
+- [ ] Gravel traps render without self-intersecting polygons
+- [ ] Track surface has no visual glitches at sharp corners
+- [ ] Works for any track geometry (imported, hand-drawn, procedural)
+- [ ] Performance: boundary calculation still fast (< 1ms for 100 waypoints)
+- [ ] Existing tracks look the same or better (no regression on mild corners)
+
+**Testing Strategy:**
+1. Test with current default track (has several hairpins)
+2. Test with a synthetic "stress test" track with 180° hairpins
+3. Test with imported tracks from track editor
+4. Visual inspection: kerbs should follow corner curves naturally
+
+**Why This Matters:**
+This is a foundational fix. Every track created for the game will benefit. Without it, track creators have to avoid tight corners or accept visual glitches. With it, any track geometry "just works."
+
+---
+
 ## User Preferences
 
 ### What They Like
@@ -2976,6 +3147,11 @@ ui/
 - **Outcome:** Complete 4-phase design saved to backlog
 - **Notes:** Very productive session, user engaged with all aspects
 
+### 2025-12-25 - Track Boundary Bug Fix Design
+- **Duration:** Short session
+- **Outcome:** Smart Track Boundaries (#8) saved to backlog
+- **Notes:** User wanted long-term fix for all tracks. Researched Shapely's offset_curve for prior art. Chose arc interpolation over miter/bevel for smoother kerb appearance. User deferred to my recommendation when unsure.
+
 ---
 
 ## Learnings
@@ -2991,6 +3167,9 @@ ui/
 ### Codebase Knowledge
 <!-- Add entries when you discover important things about the code -->
 <!-- Format: - [YYYY-MM-DD] **Discovery:** What was learned -->
+- [2025-12-25] **Discovery:** `get_track_boundaries()` uses naive perpendicular offsets that fail at sharp corners. Inner boundary points cross over when angle change > ~45°. Fix requires arc interpolation on inner boundary at corners.
+- [2025-12-25] **Discovery:** `_draw_kerbs()` has a hacky cross-product check to skip kerbs that crossed over — this is a symptom, not a fix. Proper boundary calculation eliminates need for this check.
+- [2025-12-25] **Discovery:** Shapely library has `offset_curve()` with join_style options (round/miter/bevel) — same problem, same solutions. We can implement similar logic without the dependency.
 
 ### Time Sinks (Avoid These)
 <!-- Add entries when something took too long and had a simple fix -->

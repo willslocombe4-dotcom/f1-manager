@@ -43,16 +43,22 @@ def get_available_tracks():
     return tracks
 
 
-def load_track_waypoints(filepath):
+def load_track_waypoints(filepath, include_decorations=False):
     """
     Load waypoints from a JSON track file.
     
     Args:
         filepath: Path to the JSON track file
+        include_decorations: If True, also return decorations dict
         
     Returns:
-        list: List of (x, y) tuples representing waypoints.
-              Returns None if file cannot be loaded.
+        If include_decorations=False (default):
+            list: List of (x, y) tuples representing waypoints.
+                  Returns None if file cannot be loaded.
+        If include_decorations=True:
+            tuple: (waypoints, decorations) where decorations is a dict
+                   with 'kerbs' and 'gravel' lists.
+                   Returns (None, None) if file cannot be loaded.
     """
     try:
         with open(filepath, 'r') as f:
@@ -65,12 +71,40 @@ def load_track_waypoints(filepath):
                 waypoints.append((int(point[0]), int(point[1])))
         
         if len(waypoints) < 3:
+            if include_decorations:
+                return None, None
             return None
+        
+        if include_decorations:
+            # Extract decorations if present
+            decorations = data.get('decorations', {'kerbs': [], 'gravel': []})
+            return waypoints, decorations
             
         return waypoints
         
     except (json.JSONDecodeError, IOError, KeyError):
+        if include_decorations:
+            return None, None
         return None
+
+
+def load_track_with_decorations(filepath):
+    """
+    Load waypoints and decorations from a JSON track file.
+    
+    This is a convenience function that always returns both waypoints
+    and decorations.
+    
+    Args:
+        filepath: Path to the JSON track file
+        
+    Returns:
+        tuple: (waypoints, decorations) where:
+               - waypoints is a list of (x, y) tuples
+               - decorations is a dict with 'kerbs' and 'gravel' lists
+               Returns (None, None) if file cannot be loaded.
+    """
+    return load_track_waypoints(filepath, include_decorations=True)
 
 
 def get_default_waypoints():

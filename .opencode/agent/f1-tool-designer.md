@@ -1,7 +1,7 @@
 ---
 description: Designs development tools through codebase-aware conversation with user
 mode: primary
-model: opencode/gemini-2.5-pro
+model: anthropic/claude-opus-4-5
 temperature: 0.6
 maxSteps: 40
 tools:
