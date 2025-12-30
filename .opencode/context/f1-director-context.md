@@ -41,20 +41,34 @@ If you catch yourself about to write code, STOP and call @f1-builder instead.
 
 ## Current Pipeline
 
-**Status:** BLOCKED - NEEDS DESIGN
-**Feature:** Track Rendering - Kerb Positioning Bug
-**Current Agent:** None (routing to @f1-designer)
+**Status:** IN_PROGRESS
+**Feature:** Display Settings & Menu Rename (#18)
+**Current Agent:** @f1-builder
 
-### Issue Summary
-Kerbs are being drawn across the racing line at tight hairpin corners. Multiple fix attempts failed:
-1. ❌ Turn direction detection (cross product) - didn't help
-2. ❌ Distance checks (max 50-60px from racing line) - didn't catch it
-3. ❌ Line segment intersection test - didn't catch it
-4. ❌ Per-waypoint side check (cross product) - didn't catch it
+### Progress
+1. [x] Design complete
+2. [x] Plan created
+3. [ ] Implementation ← CURRENT
+4. [ ] Review
+5. [ ] User testing
+6. [ ] Commit
 
-**Root cause:** At tight hairpins, the boundary calculation in `track.py` `get_track_boundaries()` produces points that fold over the racing line. The perpendicular offset at each waypoint points in wildly different directions at tight corners.
+### Feature Summary
+Rename current "Settings" to "Config" and add new "Settings" for display options.
 
-**Needs:** Design-level rethink of how kerbs are rendered at tight corners.
+**Changes:**
+1. Main Menu rename: "SETTINGS" → "CONFIG" (for gameplay configuration)
+2. Add new "SETTINGS" option (for display/video settings)
+3. New Settings Screen features:
+   - Fullscreen mode (always on)
+   - Resolution display (auto-detected)
+   - UI scaling (automatic based on resolution)
+
+**Implementation:**
+- Auto-detect native screen resolution on startup
+- Calculate scale factor from base 1600x900
+- Scale all UI elements proportionally
+- Game always launches in fullscreen at native resolution
 
 ---
 

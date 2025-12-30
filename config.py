@@ -7,10 +7,29 @@ SCREEN_WIDTH = 1600
 SCREEN_HEIGHT = 900
 FPS = 60
 
-# Layout
+# Display settings
+BASE_WIDTH = 1600
+BASE_HEIGHT = 900
+FULLSCREEN = True
+SCALE_FACTOR = 1.0  # Will be calculated at runtime
+
+# Supported resolutions
+SUPPORTED_RESOLUTIONS = [
+    (1280, 720),    # HD
+    (1600, 900),    # HD+
+    (1920, 1080),   # Full HD
+    (2560, 1440),   # QHD
+    (3840, 2160),   # 4K UHD
+]
+
+# Layout (base values - will be scaled at runtime)
 TRACK_VIEW_WIDTH = 1000
 TIMING_VIEW_WIDTH = 600
 TIMING_VIEW_X = TRACK_VIEW_WIDTH
+
+def get_scaled(value):
+    """Get a value scaled by the current scale factor."""
+    return int(value * SCALE_FACTOR)
 
 # Track settings
 TRACK_CENTER_X = TRACK_VIEW_WIDTH // 2
@@ -56,7 +75,8 @@ GAME_STATE_MENU = "menu"
 GAME_STATE_TRACK_SELECTION = "track_selection"
 GAME_STATE_RACING = "racing"
 GAME_STATE_RESULTS = "results"
-GAME_STATE_SETTINGS = "settings"
+GAME_STATE_SETTINGS = "settings"  # Now for display settings
+GAME_STATE_CONFIG = "config"      # Renamed from settings (gameplay config)
 
 # Track Loading
 TRACKS_DIRECTORY = "tools/tracks"
@@ -158,3 +178,6 @@ PIT_CHANCE_AFTER_CLIFF = 0.8  # 80% chance to pit each lap after cliff
 PIT_CHANCE_NEAR_CLIFF = 0.3   # 30% chance to pit when near cliff
 PIT_SPEED_PENALTY = 0.3       # Speed multiplier during pit (30% of normal)
 LAST_LAPS_NO_PIT = 3          # Don't pit in last N laps
+
+
+

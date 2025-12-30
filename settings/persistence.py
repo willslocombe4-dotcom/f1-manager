@@ -25,6 +25,7 @@ class SettingsPersistence:
             }
             with open(cls.CONFIG_FILE, 'w') as f:
                 json.dump(data, f, indent=2)
+            print(f"Settings saved: {runtime_config.display_width}x{runtime_config.display_height}, fullscreen={runtime_config.fullscreen}")
             return True
         except IOError as e:
             print(f"Failed to save settings: {e}")
@@ -55,6 +56,7 @@ class SettingsPersistence:
             
             settings = data.get("settings", {})
             runtime_config.from_dict(settings)
+            print(f"Settings loaded: {runtime_config.display_width}x{runtime_config.display_height}, fullscreen={runtime_config.fullscreen}")
             return True
         except (json.JSONDecodeError, IOError) as e:
             print(f"Failed to load settings: {e}")

@@ -1,6 +1,6 @@
 # F1 Builder Context
 
-**Last Updated:** 2025-12-23
+**Last Updated:** 2025-12-28
 
 ---
 
@@ -14,7 +14,9 @@
 ### Bug Fixes
 | Date | Bug | Root Cause | Fix |
 |------|-----|------------|-----|
-| - | - | - | No fixes yet |
+| 2025-12-28 | Game unplayable on 4K screens | Started in fullscreen at native resolution | Start in windowed 1600x900 by default |
+| 2025-12-28 | Display settings not working | Window not resizable, apply button didn't resize | Added pygame.RESIZABLE flag, handle VIDEORESIZE event |
+| 2025-12-28 | Display settings not persisting | Settings only saved when leaving config screen | Save on window resize and game exit |
 
 ---
 
@@ -55,6 +57,7 @@ self.new_property = calculated_value
 <!-- Performance traps, API quirks, rendering issues -->
 - [2025-12-24] **Gotcha:** Creating fonts/surfaces in render loop kills performance | **Fix:** Cache in __init__, only blit in render
 - [2025-12-24] **Gotcha:** pygame.draw coords should be ints for older pygame | **Fix:** Use int() or let pygame-ce handle floats
+- [2025-12-28] **Gotcha:** Window resize requires recreating UI components | **Fix:** Recreate all UI objects in _handle_window_resize()
 
 ### Python Gotchas
 <!-- Language quirks that caused bugs -->
@@ -65,11 +68,16 @@ self.new_property = calculated_value
 <!-- How you found tricky bugs, what to check first -->
 - [2025-12-24] **Win:** Lap 1 corner cutting was negative progress + int() | **Check:** Always test with negative values when progress/index involved
 - [2025-12-24] **Win:** Gravel on wrong side was fixed perpendicular direction | **Check:** Use cross product to detect turn direction
+- [2025-12-28] **Win:** Settings not persisting found by checking save() calls | **Check:** Trace when settings are saved vs when they change
 
 ### Code Patterns
 <!-- Implementations that worked well -->
 - [2025-12-24] **Pattern:** Cross product for turn direction: `(x2-x1)*(y3-y2) - (y2-y1)*(x3-x2)` | **Use:** Positive=left turn, negative=right turn
 - [2025-12-24] **Pattern:** Waypoint interpolation for smooth movement | **Use:** `t = exact_index - math.floor(exact_index)` then lerp
+- [2025-12-28] **Pattern:** Load settings before creating display | **Use:** SettingsPersistence.load() before pygame.display.set_mode()
+- [2025-12-28] **Pattern:** Interactive settings with visual feedback | **Use:** Arrows show selector, color changes for toggles
+- [2025-12-28] **Pattern:** Handle window resize events | **Use:** VIDEORESIZE event, recreate surfaces, update config values
+- [2025-12-28] **Pattern:** Save settings on state changes | **Use:** Save on window resize, game exit, not just config screen exit
 
 ---
 

@@ -45,7 +45,8 @@ class MainMenu:
             MenuItem("QUICK RACE", "quick_race"),
             MenuItem("CAREER MODE", "career_mode", enabled=False, subtitle="Coming Soon"),
             MenuItem("TRACK SELECTION", "track_selection"),
-            MenuItem("SETTINGS", "settings"),
+            MenuItem("CONFIG", "config"),  # Renamed from SETTINGS
+            MenuItem("SETTINGS", "settings", subtitle="Display options"),  # New display settings
             MenuItem("QUIT", "quit"),
         ]
         

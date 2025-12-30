@@ -3,8 +3,14 @@ AI Template Generator - Creates quality F1-style track templates
 
 Usage:
     python tools/generate_templates.py [count]
+    python tools/generate_templates.py --base path/to/track.json [count]
     
     count: Number of templates to generate (default: 10)
+    --base: Use a user-created track as the master template for variations
+
+Examples:
+    python tools/generate_templates.py 10
+    python tools/generate_templates.py --base tools/tracks/example_oval.json 5
 
 Templates are saved to tools/templates/ and can be loaded in Track Studio.
 
@@ -17,6 +23,7 @@ import sys
 import json
 import math
 import random
+import argparse
 from datetime import datetime
 
 # Output directory
@@ -312,6 +319,168 @@ def center_track(waypoints):
     return result
 
 
+# =============================================================================
+# USER TEMPLATE VARIATION FUNCTIONS
+# =============================================================================
+
+def load_base_track(filepath):
+    """
+    Load a user-created track JSON file and return ALL waypoints.
+    
+    Args:
+        filepath: Path to the track JSON file
+    
+    Returns:
+        list: List of (x, y) waypoints
+    
+    Raises:
+        FileNotFoundError: If the file doesn't exist
+        ValueError: If the file format is invalid
+    """
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"Track file not found: {filepath}")
+    
+    with open(filepath, 'r') as f:
+        data = json.load(f)
+    
+    # Extract waypoints
+    waypoints = data.get('waypoints', [])
+    if not waypoints:
+        raise ValueError(f"No waypoints found in {filepath}")
+    
+    if len(waypoints) < 4:
+        raise ValueError(f"Track needs at least 4 waypoints, found {len(waypoints)}")
+    
+    # Convert to tuples
+    return [(p[0], p[1]) for p in waypoints]
+
+
+def generate_variation_from_base(base_waypoints, variation_index):
+    """
+    Generate a track variation by applying gentle transformations to ALL waypoints.
+    
+    NO re-splining - preserves the original track character.
+    
+    Applies controlled randomness (gentle):
+    - Position noise: 0-3 pixels per waypoint (very subtle)
+    - Rotation: random angle 0-360°
+    - Mirror: 50% chance horizontal flip
+    - Scale: random 0.95x to 1.05x (subtle)
+    
+    Args:
+        base_waypoints: List of (x, y) waypoints from the base track
+        variation_index: Index of this variation
+    
+    Returns:
+        tuple: (waypoints, style_name)
+    """
+    # Copy waypoints
+    waypoints = list(base_waypoints)
+    
+    # 1. Apply very subtle position noise (0-3 pixels per point)
+    # Use smooth noise - nearby points get similar offsets
+    noise_scale = random.uniform(1, 3)  # Max pixels of noise
+    noise_freq = random.uniform(0.05, 0.15)  # How quickly noise changes
+    noise_offset = random.uniform(0, 100)  # Random phase
+    
+    varied_waypoints = []
+    for i, (x, y) in enumerate(waypoints):
+        # Smooth noise based on position in track
+        t = i / len(waypoints)
+        nx = x + noise_scale * math.sin((t + noise_offset) * len(waypoints) * noise_freq * 2 * math.pi)
+        ny = y + noise_scale * math.cos((t + noise_offset + 0.25) * len(waypoints) * noise_freq * 2 * math.pi)
+        varied_waypoints.append((nx, ny))
+    waypoints = varied_waypoints
+    
+    # 2. Apply subtle scale (0.95x to 1.05x)
+    scale = random.uniform(0.95, 1.05)
+    cx = sum(p[0] for p in waypoints) / len(waypoints)
+    cy = sum(p[1] for p in waypoints) / len(waypoints)
+    waypoints = [(cx + (x - cx) * scale, cy + (y - cy) * scale) for x, y in waypoints]
+    
+    # 3. Apply random rotation (0-360°)
+    angle = random.uniform(0, 2 * math.pi)
+    waypoints = rotate_track(waypoints, angle)
+    
+    # 4. Random mirror (50% chance)
+    if random.choice([True, False]):
+        waypoints = mirror_track(waypoints)
+    
+    # 5. Center on canvas and ensure it fits
+    waypoints = center_track(waypoints)
+    waypoints = fit_to_canvas(waypoints)
+    
+    # Convert to int tuples
+    waypoints = [(int(x), int(y)) for x, y in waypoints]
+    
+    return waypoints, 'user_template_variation'
+
+
+def fit_to_canvas(waypoints, margin=50):
+    """
+    Scale track to fit within canvas with margin.
+    Only scales down if needed, never up.
+    """
+    if not waypoints:
+        return waypoints
+    
+    min_x = min(p[0] for p in waypoints)
+    max_x = max(p[0] for p in waypoints)
+    min_y = min(p[1] for p in waypoints)
+    max_y = max(p[1] for p in waypoints)
+    
+    track_width = max_x - min_x
+    track_height = max_y - min_y
+    
+    available_width = CANVAS_WIDTH - 2 * margin
+    available_height = CANVAS_HEIGHT - 2 * margin
+    
+    # Calculate scale needed to fit
+    scale_x = available_width / track_width if track_width > 0 else 1
+    scale_y = available_height / track_height if track_height > 0 else 1
+    scale = min(scale_x, scale_y, 1.0)  # Never scale up, only down
+    
+    if scale < 1.0:
+        cx = sum(p[0] for p in waypoints) / len(waypoints)
+        cy = sum(p[1] for p in waypoints) / len(waypoints)
+        waypoints = [(cx + (x - cx) * scale, cy + (y - cy) * scale) for x, y in waypoints]
+        # Re-center after scaling
+        waypoints = center_track(waypoints)
+    
+    return waypoints
+
+
+def save_template_from_base(waypoints, index, base_name):
+    """Save a template generated from a user base track."""
+    os.makedirs(TEMPLATES_DIR, exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"template_{index:03d}_{timestamp}.json"
+    filepath = os.path.join(TEMPLATES_DIR, filename)
+    
+    data = {
+        'name': generate_name(),
+        'waypoints': waypoints,
+        'style': 'User Template Variation',
+        'description': f'Variation {index} of user track: {base_name}',
+        'generated': timestamp,
+        'num_waypoints': len(waypoints),
+        'base_track': base_name,
+        'decorations': {
+            'kerbs': [],
+            'gravel': [],
+            'grass': [],
+            'start_line': None,
+            'racing_line': False
+        }
+    }
+    
+    with open(filepath, 'w') as f:
+        json.dump(data, f, indent=2)
+    
+    return filename
+
+
 def generate_name():
     """Generate a random F1-style track name."""
     locations = [
@@ -373,35 +542,87 @@ def save_template(waypoints, style, index):
 
 def main():
     """Main entry point."""
-    count = 10
-    if len(sys.argv) > 1:
-        try:
-            count = int(sys.argv[1])
-        except ValueError:
-            print(f"Invalid count: {sys.argv[1]}")
-            print("Usage: python tools/generate_templates.py [count]")
-            return
+    parser = argparse.ArgumentParser(
+        description='Generate F1-style track templates',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''
+Examples:
+  python tools/generate_templates.py 10
+      Generate 10 templates using predefined patterns
+      
+  python tools/generate_templates.py --base tools/tracks/example_oval.json 5
+      Generate 5 variations of the user's track
+'''
+    )
+    
+    parser.add_argument(
+        '--base', '-b',
+        type=str,
+        metavar='PATH',
+        help='Path to a user-created track JSON file to use as master template'
+    )
+    
+    parser.add_argument(
+        'count',
+        type=int,
+        nargs='?',
+        default=10,
+        help='Number of templates to generate (default: 10)'
+    )
+    
+    args = parser.parse_args()
+    count = args.count
     
     print(f"Generating {count} track templates...")
     print(f"Output directory: {TEMPLATES_DIR}")
     print()
     
-    pattern_names = list(LAYOUT_PATTERNS.keys())
-    
-    for i in range(count):
-        # Cycle through patterns, with variations
-        pattern = pattern_names[i % len(pattern_names)]
+    if args.base:
+        # User template variation mode
+        try:
+            print(f"Loading base track: {args.base}")
+            base_waypoints = load_base_track(args.base)
+            print(f"  Loaded {len(base_waypoints)} waypoints (preserving all)")
+            print()
+            
+            base_name = os.path.basename(args.base)
+            
+            for i in range(count):
+                waypoints, style = generate_variation_from_base(base_waypoints, i + 1)
+                filename = save_template_from_base(waypoints, i + 1, base_name)
+                print(f"  [{i+1}/{count}] {filename} ({len(waypoints)} pts)")
+            
+            print()
+            print(f"Done! {count} variations of '{base_name}' saved to {TEMPLATES_DIR}/")
+            
+        except FileNotFoundError as e:
+            print(f"Error: {e}")
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            print(f"Error: Invalid JSON in {args.base}: {e}")
+            sys.exit(1)
+        except ValueError as e:
+            print(f"Error: {e}")
+            sys.exit(1)
+    else:
+        # Original pattern-based generation mode
+        pattern_names = list(LAYOUT_PATTERNS.keys())
         
-        # More variation for repeated patterns
-        variation = 0.02 + (i // len(pattern_names)) * 0.01
-        variation = min(variation, 0.05)  # Cap at 5%
+        for i in range(count):
+            # Cycle through patterns, with variations
+            pattern = pattern_names[i % len(pattern_names)]
+            
+            # More variation for repeated patterns
+            variation = 0.02 + (i // len(pattern_names)) * 0.01
+            variation = min(variation, 0.05)  # Cap at 5%
+            
+            waypoints, style = generate_track_from_pattern(pattern, variation)
+            filename, style_name = save_template(waypoints, style, i + 1)
+            print(f"  [{i+1}/{count}] {filename} ({style_name}, {len(waypoints)} pts)")
         
-        waypoints, style = generate_track_from_pattern(pattern, variation)
-        filename, style_name = save_template(waypoints, style, i + 1)
-        print(f"  [{i+1}/{count}] {filename} ({style_name}, {len(waypoints)} pts)")
+        print()
+        print(f"Done! Templates saved to {TEMPLATES_DIR}/")
     
-    print()
-    print(f"Done! Templates saved to {TEMPLATES_DIR}/")
     print("Load them in Track Studio: Press [1] then [B] to browse")
 
 

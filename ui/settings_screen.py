@@ -249,7 +249,7 @@ class SettingsScreen:
         """Draw the screen title."""
         center_x = config.SCREEN_WIDTH // 2
         
-        title_text = self.font_title.render("SETTINGS", True, self.color_title)
+        title_text = self.font_title.render("CONFIG", True, self.color_title)
         title_rect = title_text.get_rect(center=(center_x, 80))
         self.screen_surface.blit(title_text, title_rect)
     

@@ -13,6 +13,7 @@ from ui.results_screen import ResultsScreen
 from ui.main_menu import MainMenu
 from ui.track_selection import TrackSelectionScreen
 from ui.settings_screen import SettingsScreen
+from ui.settings_display_simple import SettingsDisplayScreen
 from settings.runtime_config import runtime_config
 from settings.persistence import SettingsPersistence
 
@@ -25,10 +26,67 @@ class F1Manager:
         pygame.init()
         pygame.display.set_caption("F1 Manager - Live Race")
 
-        # Create display
-        self.screen = pygame.display.set_mode(
-            (config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
-        )
+        # Load settings before creating display
+        SettingsPersistence.load(runtime_config)
+        
+        # Get native display resolution for reference
+        display_modes = pygame.display.list_modes()
+        
+        if display_modes and len(display_modes) > 0:
+            # Use the highest resolution available (first in the list)
+            self.native_width, self.native_height = display_modes[0]
+        else:
+            # Fallback
+            self.native_width = 1920
+            self.native_height = 1080
+        
+        self.native_resolution = (self.native_width, self.native_height)
+        
+        # Use display settings from runtime_config (defaults to windowed 1600x900)
+        display_width = getattr(runtime_config, 'display_width', 1600)
+        display_height = getattr(runtime_config, 'display_height', 900)
+        fullscreen = getattr(runtime_config, 'fullscreen', False)
+        
+        # Create display based on settings
+        if fullscreen:
+            self.screen = pygame.display.set_mode(
+                (display_width, display_height),
+                pygame.FULLSCREEN
+            )
+        else:
+            self.screen = pygame.display.set_mode(
+                (display_width, display_height),
+                pygame.RESIZABLE  # Make window resizable
+            )
+        
+        # Calculate scale factor based on actual display size
+        scale_x = display_width / config.BASE_WIDTH
+        scale_y = display_height / config.BASE_HEIGHT
+        scale_factor = min(scale_x, scale_y)
+        
+        # Update config values (runtime modification)
+        config.SCREEN_WIDTH = display_width
+        config.SCREEN_HEIGHT = display_height
+        config.SCALE_FACTOR = scale_factor
+        
+        # Update all scaled values
+        config.TRACK_VIEW_WIDTH = config.get_scaled(1000)
+        config.TIMING_VIEW_WIDTH = config.get_scaled(600)
+        config.TIMING_VIEW_X = config.TRACK_VIEW_WIDTH
+        config.TRACK_CENTER_X = config.TRACK_VIEW_WIDTH // 2
+        config.TRACK_CENTER_Y = config.SCREEN_HEIGHT // 2
+        config.TRACK_OUTER_RADIUS = config.get_scaled(350)
+        config.TRACK_INNER_RADIUS = config.get_scaled(250)
+        config.TRACK_WIDTH = config.TRACK_OUTER_RADIUS - config.TRACK_INNER_RADIUS
+        config.CAR_SIZE = config.get_scaled(12)
+        config.CAR_SPACING = config.get_scaled(25)
+        config.FONT_SIZE_LARGE = config.get_scaled(32)
+        config.FONT_SIZE_MEDIUM = config.get_scaled(20)
+        config.FONT_SIZE_SMALL = config.get_scaled(16)
+        config.KERB_WIDTH = config.get_scaled(8)
+
+        # Screen is already created above
+        # No need to reassign
         self.clock = pygame.time.Clock()
 
         # Game state
@@ -50,16 +108,17 @@ class F1Manager:
         self.main_menu.set_selected_track(self.selected_track_name)
         self.track_selection = TrackSelectionScreen(self.screen)
         self.settings_screen = SettingsScreen(self.screen)
+        self.display_settings_screen = SettingsDisplayScreen(self.screen, self.native_resolution)
         
-        # Race components (initialized when race starts)
+        # Cache FPS font
+        self.fps_font = pygame.font.Font(None, 20)
+        
+        # Initialize race components (created when race starts)
         self.race_engine = None
         self.track_renderer = None
         self.timing_screen = None
         self.results_screen = None
-        
-        # Load saved settings on startup
-        SettingsPersistence.load(runtime_config)
-
+    
     def _start_race(self, waypoints=None, decorations=None):
         """Initialize and start a race with optional custom waypoints and decorations"""
         self.current_waypoints = waypoints
@@ -86,6 +145,60 @@ class F1Manager:
         # Reset menu state
         self.main_menu.selected_index = 0
         self.state = config.GAME_STATE_MENU
+    
+    def _handle_window_resize(self, width, height):
+        """Handle window resize event"""
+        # Update the screen surface
+        self.screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+        
+        # Update config values
+        config.SCREEN_WIDTH = width
+        config.SCREEN_HEIGHT = height
+        
+        # Recalculate scale factor
+        scale_x = width / config.BASE_WIDTH
+        scale_y = height / config.BASE_HEIGHT
+        scale_factor = min(scale_x, scale_y)
+        config.SCALE_FACTOR = scale_factor
+        
+        # Update all scaled values
+        config.TRACK_VIEW_WIDTH = config.get_scaled(1000)
+        config.TIMING_VIEW_WIDTH = config.get_scaled(600)
+        config.TIMING_VIEW_X = config.TRACK_VIEW_WIDTH
+        config.TRACK_CENTER_X = config.TRACK_VIEW_WIDTH // 2
+        config.TRACK_CENTER_Y = config.SCREEN_HEIGHT // 2
+        config.TRACK_OUTER_RADIUS = config.get_scaled(350)
+        config.TRACK_INNER_RADIUS = config.get_scaled(250)
+        config.TRACK_WIDTH = config.TRACK_OUTER_RADIUS - config.TRACK_INNER_RADIUS
+        config.CAR_SIZE = config.get_scaled(12)
+        config.CAR_SPACING = config.get_scaled(25)
+        config.FONT_SIZE_LARGE = config.get_scaled(32)
+        config.FONT_SIZE_MEDIUM = config.get_scaled(20)
+        config.FONT_SIZE_SMALL = config.get_scaled(16)
+        config.KERB_WIDTH = config.get_scaled(8)
+        
+        # Update runtime config
+        runtime_config.display_width = width
+        runtime_config.display_height = height
+        
+        # Save to persistence
+        SettingsPersistence.save(runtime_config)
+        
+        # Recreate UI surfaces with new dimensions
+        self.main_menu = MainMenu(self.screen)
+        self.main_menu.set_selected_track(self.selected_track_name)
+        self.track_selection = TrackSelectionScreen(self.screen)
+        self.settings_screen = SettingsScreen(self.screen)
+        self.display_settings_screen = SettingsDisplayScreen(self.screen, self.native_resolution)
+        
+        # Recreate race components if in race
+        if self.state == config.GAME_STATE_RACING and self.race_engine:
+            self.track_renderer = TrackRenderer(self.screen)
+            self.timing_screen = TimingScreen(self.screen)
+            self.results_screen = ResultsScreen(self.screen)
+        
+        # Recreate FPS font
+        self.fps_font = pygame.font.Font(None, 20)
 
     def handle_events(self):
         """Handle user input based on current state"""
@@ -93,12 +206,18 @@ class F1Manager:
             if event.type == pygame.QUIT:
                 self.running = False
                 return
+            
+            # Handle window resize event
+            elif event.type == pygame.VIDEORESIZE:
+                self._handle_window_resize(event.w, event.h)
 
             # Route events based on state
             if self.state == config.GAME_STATE_MENU:
                 self._handle_menu_event(event)
             elif self.state == config.GAME_STATE_TRACK_SELECTION:
                 self._handle_track_selection_event(event)
+            elif self.state == config.GAME_STATE_CONFIG:
+                self._handle_config_event(event)
             elif self.state == config.GAME_STATE_SETTINGS:
                 self._handle_settings_event(event)
             elif self.state == config.GAME_STATE_RACING:
@@ -116,6 +235,8 @@ class F1Manager:
             self.track_selection.refresh_tracks()
             self.track_selection.set_current_selection(self.selected_track_name)
             self.state = config.GAME_STATE_TRACK_SELECTION
+        elif action == "config":
+            self.state = config.GAME_STATE_CONFIG
         elif action == "settings":
             self.state = config.GAME_STATE_SETTINGS
         elif action == "quit":
@@ -134,11 +255,40 @@ class F1Manager:
             self.state = config.GAME_STATE_MENU
 
     def _handle_settings_event(self, event):
-        """Handle events in settings state"""
+        """Handle events in display settings state"""
+        result = self.display_settings_screen.handle_event(event)
+        
+        if result == "back":
+            self.state = config.GAME_STATE_MENU
+        elif result == "restart_required":
+            # Apply button was pressed - resize the window
+            new_width = runtime_config.display_width
+            new_height = runtime_config.display_height
+            fullscreen = runtime_config.fullscreen
+            
+            if fullscreen:
+                self.screen = pygame.display.set_mode(
+                    (new_width, new_height),
+                    pygame.FULLSCREEN
+                )
+            else:
+                self.screen = pygame.display.set_mode(
+                    (new_width, new_height),
+                    pygame.RESIZABLE
+                )
+            
+            # Update config values
+            self._handle_window_resize(new_width, new_height)
+            
+            # Return to menu after applying
+            self.state = config.GAME_STATE_MENU
+
+    def _handle_config_event(self, event):
+        """Handle events in config state (game configuration)"""
         result = self.settings_screen.handle_event(event)
         
         if result == "back":
-            # Save settings when leaving settings screen
+            # Save settings when leaving config screen
             SettingsPersistence.save(runtime_config)
             self.state = config.GAME_STATE_MENU
 
@@ -227,8 +377,10 @@ class F1Manager:
             self.main_menu.update()
         elif self.state == config.GAME_STATE_TRACK_SELECTION:
             self.track_selection.update()
-        elif self.state == config.GAME_STATE_SETTINGS:
+        elif self.state == config.GAME_STATE_CONFIG:
             self.settings_screen.update()
+        elif self.state == config.GAME_STATE_SETTINGS:
+            self.display_settings_screen.update()
         elif self.state == config.GAME_STATE_RACING:
             if self.race_engine and self.race_engine.race_started and not self.paused:
                 if self.race_engine.is_race_finished():
@@ -248,8 +400,10 @@ class F1Manager:
         elif self.state == config.GAME_STATE_TRACK_SELECTION:
             self.track_selection.render()
             
-        elif self.state == config.GAME_STATE_SETTINGS:
+        elif self.state == config.GAME_STATE_CONFIG:
             self.settings_screen.render()
+        elif self.state == config.GAME_STATE_SETTINGS:
+            self.display_settings_screen.render()
             
         elif self.state == config.GAME_STATE_RACING:
             self._render_race()
@@ -259,8 +413,7 @@ class F1Manager:
 
         # Show FPS (always)
         fps = int(self.clock.get_fps())
-        font_small = pygame.font.Font(None, 20)
-        fps_text = font_small.render(f"FPS: {fps}", True, config.TEXT_GRAY)
+        fps_text = self.fps_font.render(f"FPS: {fps}", True, config.TEXT_GRAY)
         self.screen.blit(fps_text, (config.SCREEN_WIDTH - 80, 10))
 
         # Update display
@@ -305,7 +458,9 @@ class F1Manager:
             self.update()
             self.render()
             self.clock.tick(config.FPS)
-
+        
+        # Save settings before quitting
+        SettingsPersistence.save(runtime_config)
         pygame.quit()
         sys.exit()
 

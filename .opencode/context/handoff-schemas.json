@@ -1,0 +1,292 @@
+{
+  "schemas": {
+    "director_to_planner": {
+      "schemaVersion": "1.0.0",
+      "description": "Director hands off feature request to Planner for analysis",
+      "required": ["handoff", "payload"],
+      "properties": {
+        "handoff": {
+          "type": "object",
+          "required": ["from", "to", "timestamp", "trace_id", "schema_version"],
+          "properties": {
+            "from": {"type": "string", "enum": ["f1-director"]},
+            "to": {"type": "string", "enum": ["f1-planner"]},
+            "timestamp": {"type": "string", "format": "date-time"},
+            "trace_id": {"type": "string", "pattern": "^[a-z]+-[0-9]+-[a-z0-9]+$"},
+            "schema_version": {"type": "string", "enum": ["1.0.0"]}
+          }
+        },
+        "payload": {
+          "type": "object",
+          "required": ["feature_id", "feature_description", "acceptance_criteria"],
+          "properties": {
+            "feature_id": {"type": "string"},
+            "feature_description": {"type": "string"},
+            "acceptance_criteria": {
+              "type": "array",
+              "items": {"type": "string"},
+              "minItems": 1
+            },
+            "context": {
+              "type": "object",
+              "properties": {
+                "user_preferences": {"type": "array", "items": {"type": "string"}},
+                "related_features": {"type": "array", "items": {"type": "string"}},
+                "constraints": {"type": "array", "items": {"type": "string"}}
+              }
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "priority": {"type": "string", "enum": ["low", "medium", "high"]},
+            "estimated_complexity": {"type": "string", "enum": ["low", "medium", "high"]},
+            "deadline": {"type": "string", "format": "date-time", "nullable": true}
+          }
+        }
+      }
+    },
+    "planner_to_builder": {
+      "schemaVersion": "1.0.0",
+      "description": "Planner hands off implementation plan to Builder",
+      "required": ["handoff", "payload"],
+      "properties": {
+        "handoff": {
+          "type": "object",
+          "required": ["from", "to", "timestamp", "trace_id", "schema_version"],
+          "properties": {
+            "from": {"type": "string", "enum": ["f1-planner"]},
+            "to": {"type": "string", "enum": ["f1-builder"]},
+            "timestamp": {"type": "string", "format": "date-time"},
+            "trace_id": {"type": "string"},
+            "schema_version": {"type": "string", "enum": ["1.0.0"]}
+          }
+        },
+        "payload": {
+          "type": "object",
+          "required": ["feature_id", "implementation_plan", "files_to_modify", "tests_required"],
+          "properties": {
+            "feature_id": {"type": "string"},
+            "implementation_plan": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["step", "description", "file", "changes"],
+                "properties": {
+                  "step": {"type": "integer"},
+                  "description": {"type": "string"},
+                  "file": {"type": "string"},
+                  "changes": {"type": "array", "items": {"type": "string"}}
+                }
+              }
+            },
+            "files_to_modify": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "tests_required": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["test_name", "test_type", "description"],
+                "properties": {
+                  "test_name": {"type": "string"},
+                  "test_type": {"type": "string", "enum": ["unit", "integration", "manual"]},
+                  "description": {"type": "string"}
+                }
+              }
+            },
+            "dependencies": {
+              "type": "object",
+              "properties": {
+                "internal": {"type": "array", "items": {"type": "string"}},
+                "external": {"type": "array", "items": {"type": "string"}}
+              }
+            },
+            "risk_assessment": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["risk", "probability", "impact", "mitigation"],
+                "properties": {
+                  "risk": {"type": "string"},
+                  "probability": {"type": "string", "enum": ["low", "medium", "high"]},
+                  "impact": {"type": "string", "enum": ["low", "medium", "high"]},
+                  "mitigation": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "estimated_time": {"type": "string"},
+            "complexity_score": {"type": "integer", "minimum": 1, "maximum": 10},
+            "confidence": {"type": "string", "enum": ["low", "medium", "high"]}
+          }
+        }
+      }
+    },
+    "builder_to_reviewer": {
+      "schemaVersion": "1.0.0",
+      "description": "Builder hands off implementation to Reviewer",
+      "required": ["handoff", "payload"],
+      "properties": {
+        "handoff": {
+          "type": "object",
+          "required": ["from", "to", "timestamp", "trace_id", "schema_version"],
+          "properties": {
+            "from": {"type": "string", "enum": ["f1-builder"]},
+            "to": {"type": "string", "enum": ["f1-reviewer"]},
+            "timestamp": {"type": "string", "format": "date-time"},
+            "trace_id": {"type": "string"},
+            "schema_version": {"type": "string", "enum": ["1.0.0"]}
+          }
+        },
+        "payload": {
+          "type": "object",
+          "required": ["feature_id", "files_modified", "tests_passed", "changes_summary"],
+          "properties": {
+            "feature_id": {"type": "string"},
+            "files_modified": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["file", "changes", "lines_added", "lines_removed"],
+                "properties": {
+                  "file": {"type": "string"},
+                  "changes": {"type": "array", "items": {"type": "string"}},
+                  "lines_added": {"type": "integer"},
+                  "lines_removed": {"type": "integer"}
+                }
+              }
+            },
+            "tests_passed": {"type": "boolean"},
+            "test_results": {
+              "type": "object",
+              "properties": {
+                "summary": {"type": "string"},
+                "passed": {"type": "integer"},
+                "failed": {"type": "integer"},
+                "duration": {"type": "string"}
+              }
+            },
+            "changes_summary": {"type": "string"},
+            "performance_impact": {
+              "type": "object",
+              "properties": {
+                "fps_before": {"type": "number"},
+                "fps_after": {"type": "number"},
+                "memory_delta": {"type": "string"}
+              }
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "implementation_time": {"type": "string"},
+            "retry_count": {"type": "integer"},
+            "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
+            "notes": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "reviewer_to_ops": {
+      "schemaVersion": "1.0.0",
+      "description": "Reviewer approves and hands off to Ops for commit",
+      "required": ["handoff", "payload"],
+      "properties": {
+        "handoff": {
+          "type": "object",
+          "required": ["from", "to", "timestamp", "trace_id", "schema_version"],
+          "properties": {
+            "from": {"type": "string", "enum": ["f1-reviewer"]},
+            "to": {"type": "string", "enum": ["f1-ops"]},
+            "timestamp": {"type": "string", "format": "date-time"},
+            "trace_id": {"type": "string"},
+            "schema_version": {"type": "string", "enum": ["1.0.0"]}
+          }
+        },
+        "payload": {
+          "type": "object",
+          "required": ["feature_id", "approval_status", "commit_message", "files_to_commit"],
+          "properties": {
+            "feature_id": {"type": "string"},
+            "approval_status": {"type": "string", "enum": ["approved", "approved_with_notes"]},
+            "commit_message": {
+              "type": "object",
+              "required": ["type", "scope", "description"],
+              "properties": {
+                "type": {"type": "string", "enum": ["feat", "fix", "refactor", "docs", "test"]},
+                "scope": {"type": "string"},
+                "description": {"type": "string"},
+                "body": {"type": "string"},
+                "breaking_change": {"type": "boolean"}
+              }
+            },
+            "files_to_commit": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "review_notes": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "review_duration": {"type": "string"},
+            "code_quality_score": {"type": "integer", "minimum": 1, "maximum": 10},
+            "suggested_followups": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "error_handoff": {
+      "schemaVersion": "1.0.0",
+      "description": "Error information passed between agents for recovery",
+      "required": ["error", "context"],
+      "properties": {
+        "error": {
+          "type": "object",
+          "required": ["type", "message", "timestamp", "agent"],
+          "properties": {
+            "type": {"type": "string", "enum": ["transient", "semantic", "context_overflow", "cascading"]},
+            "message": {"type": "string"},
+            "timestamp": {"type": "string", "format": "date-time"},
+            "agent": {"type": "string"},
+            "stack_trace": {"type": "string"}
+          }
+        },
+        "context": {
+          "type": "object",
+          "required": ["trace_id", "retry_count", "recovery_attempts"],
+          "properties": {
+            "trace_id": {"type": "string"},
+            "retry_count": {"type": "integer"},
+            "recovery_attempts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["attempt", "strategy", "result"],
+                "properties": {
+                  "attempt": {"type": "integer"},
+                  "strategy": {"type": "string"},
+                  "result": {"type": "string", "enum": ["success", "failed"]},
+                  "reason": {"type": "string"}
+                }
+              }
+            },
+            "reflection": {"type": "string"}
+          }
+        }
+      }
+    }
+  }
+}

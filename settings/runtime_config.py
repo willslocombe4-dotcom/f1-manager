@@ -30,6 +30,11 @@ class RuntimeConfig:
     
     def reset_to_defaults(self):
         """Reset all settings to config.py defaults."""
+        # Display settings
+        self.display_width = 1280  # Default windowed width (smaller for 4K screens)
+        self.display_height = 720  # Default windowed height
+        self.fullscreen = False    # Start in windowed mode
+        
         # Race settings
         self.race_laps = 20  # Default sprint race
         self.simulation_speed = config.SIMULATION_SPEED_DEFAULT
@@ -79,6 +84,9 @@ class RuntimeConfig:
     def to_dict(self):
         """Convert settings to dictionary for persistence."""
         return {
+            "display_width": self.display_width,
+            "display_height": self.display_height,
+            "fullscreen": self.fullscreen,
             "race_laps": self.race_laps,
             "simulation_speed": self.simulation_speed,
             "tire_deg_rates": self.tire_deg_rates,
@@ -103,6 +111,14 @@ class RuntimeConfig:
         """Load settings from dictionary."""
         if not data:
             return
+        
+        # Display settings
+        if "display_width" in data:
+            self.display_width = data["display_width"]
+        if "display_height" in data:
+            self.display_height = data["display_height"]
+        if "fullscreen" in data:
+            self.fullscreen = data["fullscreen"]
         
         # Race settings
         if "race_laps" in data:

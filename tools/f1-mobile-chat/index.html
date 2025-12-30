@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>F1 Designer Chat</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen">
+            <div class="settings-container">
+                <h1>F1 Designer</h1>
+                <p class="subtitle">Mobile Chat</p>
+                
+                <div class="settings-form">
+                    <label for="server-url">OpenCode Server URL</label>
+                    <input 
+                        type="url" 
+                        id="server-url" 
+                        placeholder="http://100.x.x.x:4096"
+                        autocomplete="off"
+                    >
+                    <p class="hint">Use your Tailscale IP address</p>
+                    
+                    <button id="connect-btn" class="primary-btn">Connect</button>
+                    
+                    <div id="connection-status" class="status"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sessions Screen -->
+        <div id="sessions-screen" class="screen hidden">
+            <header>
+                <button id="settings-btn" class="icon-btn" aria-label="Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                    </svg>
+                </button>
+                <h1>Brainstorms</h1>
+                <button id="new-session-btn" class="icon-btn" aria-label="New Chat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </button>
+            </header>
+            
+            <div id="sessions-list" class="sessions-list">
+                <!-- Sessions loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Chat Screen -->
+        <div id="chat-screen" class="screen hidden">
+            <header>
+                <button id="back-btn" class="icon-btn" aria-label="Back">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <div class="header-title">
+                    <h1>f1-designer</h1>
+                    <span id="session-status" class="status-indicator"></span>
+                </div>
+                <button id="save-backlog-btn" class="icon-btn" aria-label="Save to Backlog" title="Save to Backlog">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                </button>
+            </header>
+            
+            <div id="messages" class="messages">
+                <!-- Messages loaded dynamically -->
+            </div>
+            
+            <div class="input-container">
+                <textarea 
+                    id="message-input" 
+                    placeholder="Describe your game idea..."
+                    rows="1"
+                ></textarea>
+                <button id="send-btn" class="send-btn" aria-label="Send">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"/>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toast" class="toast hidden"></div>
+        
+        <!-- Loading Overlay -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
