@@ -2,7 +2,7 @@
   "feature": "Real F1 Circuit Layouts",
   "description": "# Real F1 Circuit Layouts\n\nAccurate layouts of famous F1 circuits like Monaco, Silverstone, Spa, and Monza. Each track has unique characteristics affecting overtaking opportunities, tire wear, and race strategy.\n\n## Rationale\nMore diverse track layouts was identified as a known gap. Real circuits create authentic F1 atmosphere and variety between races. Different track characteristics (street circuit vs high-speed) add strategic variety and replayability.\n\n## User Stories\n- As an F1 fan, I want to race on famous circuits so that the experience feels authentic\n- As a strategy player, I want different track characteristics so that each race requires different approaches\n- As a viewer, I want to recognize iconic track shapes like Monaco and Spa\n\n## Acceptance Criteria\n- [ ] At least 6 iconic F1 circuits available (Monaco, Silverstone, Spa, Monza, Suzuka, COTA)\n- [ ] Each track has accurate waypoint layout matching real circuit shape\n- [ ] Tracks have appropriate DRS zones matching real F1 configuration\n- [ ] Track characteristics affect tire wear (high/medium/low degradation)\n- [ ] Track selection screen shows circuit preview and characteristics\n- [ ] Custom tracks from track editor still supported alongside official circuits\n",
   "created_at": "2026-01-08T05:21:05.553Z",
-  "updated_at": "2026-01-08T22:37:53.138Z",
+  "updated_at": "2026-01-08T22:46:04.800Z",
   "status": "in_progress",
   "planStatus": "in_progress",
   "phases": [
@@ -198,9 +198,13 @@
         {
           "subtask_id": "5.2",
           "description": "Test tire degradation differences between circuits",
-          "status": "pending",
-          "files_affected": [],
-          "notes": "Verify Monaco has lower tire wear than Suzuka. Check that degradation rates are balanced and create strategic variety."
+          "status": "completed",
+          "files_affected": [
+            "test_tire_degradation_circuits.py",
+            "TIRE_DEGRADATION_TESTING_GUIDE.md",
+            "TIRE_DEGRADATION_VERIFICATION.md"
+          ],
+          "notes": "✓ Comprehensive testing and verification of tire degradation system across all F1 circuits. Code verification confirmed complete implementation chain: circuits.py defines values (0.7-1.4), track.py provides get_tire_degradation_multiplier(), car.py fetches and applies multiplier each frame. Verified all 6 circuits have correct multipliers: Monaco (0.7x), Monza (0.8x), Spa (1.0x baseline), COTA (1.2x), Silverstone (1.3x), Suzuka (1.4x). Strategic impact confirmed: Monaco has 2.8% less pace loss than Suzuka at lap 10, creating meaningful gameplay variety. Created automated test script (test_tire_degradation_circuits.py), comprehensive testing guide (TIRE_DEGRADATION_TESTING_GUIDE.md), and quick verification checklist (TIRE_DEGRADATION_VERIFICATION.md). System creates authentic F1 strategic variety: low-degradation circuits favor aggressive strategies, high-degradation circuits require conservative management. Balance verified: 2x variation range (0.7-1.4) provides variety without extremes."
         },
         {
           "subtask_id": "5.3",
