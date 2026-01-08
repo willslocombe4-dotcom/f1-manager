@@ -266,6 +266,9 @@ class TrackSelectionScreen:
         # Draw circuit preview/minimap
         self._draw_circuit_preview()
 
+        # Draw track characteristics
+        self._draw_track_characteristics()
+
         # Draw footer
         self._draw_footer()
 
@@ -590,6 +593,120 @@ class TrackSelectionScreen:
             # Draw start/finish text
             start_label = self.font_track_info.render("START", True, (200, 200, 200))
             self.selection_surface.blit(start_label, (int(start_x) + 10, int(start_y) - 10))
+
+    def _draw_track_characteristics(self):
+        """Draw track characteristics for the selected track (F1 circuits only)"""
+        if not self.tracks:
+            return
+
+        # Get currently hovered track
+        track = self.tracks[self.selected_index]
+
+        # Only show characteristics for F1 circuits
+        if not track.get('is_f1_circuit'):
+            return
+
+        # Get circuit data
+        circuit_data = get_circuit_by_id(track.get('circuit_id'))
+        if not circuit_data:
+            return
+
+        # Position below the preview box
+        char_x = self.preview_x
+        char_y = self.preview_y + self.preview_size + 30
+        char_width = self.preview_size
+
+        # Draw background box
+        char_box_height = 210
+        char_rect = pygame.Rect(char_x, char_y, char_width, char_box_height)
+        pygame.draw.rect(self.selection_surface, self.color_box_bg, char_rect, border_radius=8)
+        pygame.draw.rect(self.selection_surface, self.color_box_border, char_rect, width=2, border_radius=8)
+
+        # Draw title
+        title_text = self.font_preview_label.render("TRACK CHARACTERISTICS", True, self.color_subtitle)
+        title_rect = title_text.get_rect(center=(char_x + char_width // 2, char_y - 20))
+        self.selection_surface.blit(title_text, title_rect)
+
+        # Get characteristics
+        characteristics = circuit_data.get('characteristics', {})
+
+        # Format tire degradation
+        tire_deg = characteristics.get('tire_degradation', 1.0)
+        if tire_deg <= 0.8:
+            tire_deg_text = "Low"
+            tire_deg_color = (0, 200, 0)  # Green
+        elif tire_deg <= 1.1:
+            tire_deg_text = "Medium"
+            tire_deg_color = (255, 215, 0)  # Gold
+        else:
+            tire_deg_text = "High"
+            tire_deg_color = (255, 100, 0)  # Orange-red
+
+        # Format track type
+        track_type = circuit_data.get('type', 'permanent')
+        if track_type == 'street':
+            track_type_text = "Street Circuit"
+            track_type_icon = "🏙️"
+        else:
+            track_type_text = "Permanent Circuit"
+            track_type_icon = "🏁"
+
+        # Get DRS zones count
+        drs_zones = circuit_data.get('drs_zones', [])
+        drs_count = len(drs_zones)
+
+        # Format overtaking difficulty
+        overtaking = characteristics.get('overtaking_difficulty', 'medium')
+        overtaking_display = overtaking.replace('_', ' ').title()
+
+        # Color code overtaking difficulty
+        if overtaking == 'low':
+            overtaking_color = (0, 200, 0)  # Green (easy to overtake)
+        elif overtaking == 'medium':
+            overtaking_color = (255, 215, 0)  # Gold
+        elif overtaking == 'high':
+            overtaking_color = (255, 140, 0)  # Orange
+        else:  # very_high
+            overtaking_color = (255, 50, 50)  # Red (very hard to overtake)
+
+        # Draw characteristics with icons
+        line_height = 45
+        start_y = char_y + 20
+        label_x = char_x + 20
+        value_x = char_x + char_width - 20
+
+        # Font for labels and values
+        label_font = self.font_track_info
+        value_font = pygame.font.Font(None, 24)  # Slightly larger for emphasis
+
+        # 1. Track Type
+        label = label_font.render("Track Type:", True, self.color_subtitle)
+        self.selection_surface.blit(label, (label_x, start_y))
+        value = value_font.render(track_type_text, True, self.color_track)
+        value_rect = value.get_rect(right=value_x, y=start_y)
+        self.selection_surface.blit(value, value_rect)
+
+        # 2. Tire Degradation
+        label = label_font.render("Tire Wear:", True, self.color_subtitle)
+        self.selection_surface.blit(label, (label_x, start_y + line_height))
+        value = value_font.render(tire_deg_text, True, tire_deg_color)
+        value_rect = value.get_rect(right=value_x, y=start_y + line_height)
+        self.selection_surface.blit(value, value_rect)
+
+        # 3. DRS Zones
+        label = label_font.render("DRS Zones:", True, self.color_subtitle)
+        self.selection_surface.blit(label, (label_x, start_y + line_height * 2))
+        drs_text = f"{drs_count} zone{'s' if drs_count != 1 else ''}"
+        value = value_font.render(drs_text, True, self.color_track)
+        value_rect = value.get_rect(right=value_x, y=start_y + line_height * 2)
+        self.selection_surface.blit(value, value_rect)
+
+        # 4. Overtaking Difficulty
+        label = label_font.render("Overtaking:", True, self.color_subtitle)
+        self.selection_surface.blit(label, (label_x, start_y + line_height * 3))
+        value = value_font.render(overtaking_display, True, overtaking_color)
+        value_rect = value.get_rect(right=value_x, y=start_y + line_height * 3)
+        self.selection_surface.blit(value, value_rect)
 
     def refresh_tracks(self):
         """Refresh the track list from disk"""
