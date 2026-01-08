@@ -1,0 +1,15 @@
+{
+  "discovered_files": {
+    "race/race_engine.py": {
+      "description": "RaceEngine.update() is the central simulation loop that moves cars and calculates positions. This is where event detection hooks should be added.",
+      "category": "architecture",
+      "discovered_at": "2026-01-08T23:25:12.815960+00:00"
+    },
+    "ui/timing_screen.py": {
+      "description": "TimingScreen renders at TIMING_VIEW_X (1000px) with 600px width. Row height is 38px, timing rows end around y=865. Commentary panel should fit below or overlay.",
+      "category": "ui_layout",
+      "discovered_at": "2026-01-08T23:25:12.858482+00:00"
+    }
+  },
+  "last_updated": "2026-01-08T23:25:12.858493+00:00"
+}

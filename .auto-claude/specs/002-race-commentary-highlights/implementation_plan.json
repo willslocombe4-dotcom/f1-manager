@@ -1,0 +1,220 @@
+{
+  "feature": "Race Commentary Highlights",
+  "description": "Display text-based commentary for key race events like overtakes, pit stops, and fastest laps. Creates the feeling of watching an F1 broadcast with expert commentary highlighting important moments.",
+  "created_at": "2026-01-08T05:21:19.716Z",
+  "updated_at": "2026-01-08T23:23:03.187Z",
+  "status": "in_progress",
+  "planStatus": "approved",
+  "phases": [
+    {
+      "id": "phase_1",
+      "name": "Race Events Detection System",
+      "description": "Create the core event detection system to track race events like overtakes, pit stops, and fastest laps",
+      "subtasks": [
+        {
+          "id": "1.1",
+          "title": "Create RaceEvent data class",
+          "description": "Create a data class to represent race events with type, lap, time, involved drivers, and message",
+          "status": "completed",
+          "files": [
+            "race/race_events.py"
+          ],
+          "acceptance_criteria": [
+            "RaceEvent class with event_type, lap, timestamp, drivers, and message fields",
+            "EventType enum for OVERTAKE, PIT_STOP, FASTEST_LAP, RACE_START, RACE_END, BLUE_FLAG"
+          ],
+          "notes": "Created RaceEvent data class with all required fields (event_type, lap, timestamp, drivers, message) and EventType enum with all event types (OVERTAKE, PIT_STOP, FASTEST_LAP, RACE_START, RACE_END, BLUE_FLAG). Implementation follows project patterns with proper docstrings and includes smart handling of single/multiple drivers.",
+          "updated_at": "2026-01-08T23:26:56.268038+00:00"
+        },
+        {
+          "id": "1.2",
+          "title": "Create EventManager class",
+          "description": "Create EventManager to collect, store, and provide access to race events with history limit",
+          "status": "pending",
+          "files": [
+            "race/race_events.py"
+          ],
+          "acceptance_criteria": [
+            "EventManager stores up to 50 recent events",
+            "Methods: add_event(), get_recent_events(count), clear_events()",
+            "Events sorted by timestamp (newest first for display)"
+          ]
+        },
+        {
+          "id": "1.3",
+          "title": "Add position tracking to Car class",
+          "description": "Track previous position in Car class to detect overtakes between frames",
+          "status": "pending",
+          "files": [
+            "race/car.py"
+          ],
+          "acceptance_criteria": [
+            "Car.previous_position field tracks last frame position",
+            "Car.position_changed() method returns True if position changed this frame"
+          ]
+        },
+        {
+          "id": "1.4",
+          "title": "Integrate event detection into RaceEngine",
+          "description": "Add event detection logic to RaceEngine.update() to detect overtakes, pit stops, fastest laps",
+          "status": "pending",
+          "files": [
+            "race/race_engine.py"
+          ],
+          "acceptance_criteria": [
+            "RaceEngine owns EventManager instance",
+            "Detects overtakes by comparing position changes",
+            "Detects pit stop start/end events",
+            "Tracks and detects new fastest lap",
+            "Generates RACE_START event when race begins"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase_2",
+      "name": "Commentary Generator",
+      "description": "Create commentary text generation with authentic F1 terminology and varied phrases",
+      "subtasks": [
+        {
+          "id": "2.1",
+          "title": "Create CommentaryGenerator class",
+          "description": "Generator that converts race events into broadcast-style commentary text",
+          "status": "pending",
+          "files": [
+            "race/commentary.py"
+          ],
+          "acceptance_criteria": [
+            "CommentaryGenerator with generate_commentary(event) method",
+            "Returns formatted string with F1 terminology",
+            "Uses driver full names and team names appropriately"
+          ]
+        },
+        {
+          "id": "2.2",
+          "title": "Add commentary templates for all event types",
+          "description": "Create varied commentary templates for each event type with randomization",
+          "status": "pending",
+          "files": [
+            "race/commentary.py"
+          ],
+          "acceptance_criteria": [
+            "3-5 template variations per event type",
+            "Templates for: overtakes, pit stops, fastest laps, race start/end",
+            "Uses authentic F1 phrases (DRS, undercut, purple sector, etc.)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase_3",
+      "name": "Commentary Panel UI",
+      "description": "Create the visual commentary panel that displays on the timing screen",
+      "subtasks": [
+        {
+          "id": "3.1",
+          "title": "Create CommentaryPanel UI component",
+          "description": "Create a Pygame UI component that renders commentary messages in a scrollable panel",
+          "status": "pending",
+          "files": [
+            "ui/commentary_panel.py"
+          ],
+          "acceptance_criteria": [
+            "CommentaryPanel class with render(events) method",
+            "Displays 3-5 most recent events",
+            "Each event shows lap number and commentary text",
+            "Team color coding for driver names",
+            "Smooth scrolling when new events appear"
+          ]
+        },
+        {
+          "id": "3.2",
+          "title": "Style commentary panel to match F1 broadcast",
+          "description": "Apply F1 broadcast-style visual design to the commentary panel",
+          "status": "pending",
+          "files": [
+            "ui/commentary_panel.py"
+          ],
+          "acceptance_criteria": [
+            "Dark background with subtle separation from timing",
+            "Event type icons or color coding",
+            "Lap number badge styling",
+            "Fade effect for older messages"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase_4",
+      "name": "Integration and Polish",
+      "description": "Integrate commentary system into the main game and add pause/scroll functionality",
+      "subtasks": [
+        {
+          "id": "4.1",
+          "title": "Integrate CommentaryPanel into TimingScreen",
+          "description": "Add commentary panel below the timing tower in the timing screen area",
+          "status": "pending",
+          "files": [
+            "ui/timing_screen.py"
+          ],
+          "acceptance_criteria": [
+            "Commentary panel renders below timing rows",
+            "Panel gets events from RaceEngine.event_manager",
+            "Layout fits within timing view width"
+          ]
+        },
+        {
+          "id": "4.2",
+          "title": "Add commentary pause functionality",
+          "description": "Allow user to pause commentary auto-scroll to review past events",
+          "status": "pending",
+          "files": [
+            "ui/commentary_panel.py",
+            "main.py"
+          ],
+          "acceptance_criteria": [
+            "C key toggles commentary pause",
+            "Visual indicator when commentary is paused",
+            "Arrow keys scroll through paused commentary",
+            "Auto-resume after period of inactivity"
+          ]
+        },
+        {
+          "id": "4.3",
+          "title": "Add race end summary event",
+          "description": "Generate summary commentary when race finishes",
+          "status": "pending",
+          "files": [
+            "race/race_engine.py",
+            "race/commentary.py"
+          ],
+          "acceptance_criteria": [
+            "RACE_END event generated when leader finishes",
+            "Commentary includes winner name and margin",
+            "Commentary mentions any notable position changes"
+          ]
+        },
+        {
+          "id": "4.4",
+          "title": "End-to-end testing and polish",
+          "description": "Test complete commentary system and fix any issues",
+          "status": "pending",
+          "files": [],
+          "acceptance_criteria": [
+            "Commentary appears for all event types during race",
+            "No duplicate or missed events",
+            "Performance acceptable (no frame drops)",
+            "All acceptance criteria from spec verified"
+          ]
+        }
+      ]
+    }
+  ],
+  "qa_status": {
+    "status": "pending",
+    "tests_passed": "",
+    "issues": ""
+  },
+  "notes": "Commentary system follows existing patterns: separate race logic (race/) from UI (ui/). Events stored in RaceEngine, rendered by TimingScreen. Uses existing config.py colors and fonts.",
+  "last_updated": "2026-01-08T23:26:56.268048+00:00"
+}
