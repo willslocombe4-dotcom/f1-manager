@@ -58,7 +58,7 @@ class Car:
         self.synergy_level = self._calculate_synergy()
 
         # Track characteristics (updated during race)
-        self.track_tire_deg_multiplier = 1.0  # Default multiplier for custom tracks
+        self.track_tire_deg_multiplier = config.DEFAULT_TIRE_DEG_MULTIPLIER  # Default multiplier for custom tracks
 
         # DRS (Drag Reduction System)
         self.is_drs_available = False  # True if within 1 second of car ahead
@@ -256,7 +256,7 @@ class Car:
         # and is active if available AND currently in a DRS zone
         self.is_drs_available = (
             self.position > 1 and  # Not the leader
-            self.lap > 1 and  # Not on first lap (DRS enabled from lap 2)
+            self.lap >= config.DRS_ENABLED_FROM_LAP and  # DRS enabled from configured lap onwards
             self.gap_to_ahead_time <= config.DRS_DETECTION_TIME
         )
         self.is_drs_active = (

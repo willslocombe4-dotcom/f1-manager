@@ -406,11 +406,11 @@ class Track:
         Different circuits wear tires at different rates.
 
         Returns:
-            float: Tire degradation multiplier (0.7 to 1.4), defaults to 1.0
+            float: Tire degradation multiplier (0.7 to 1.4), defaults to config.DEFAULT_TIRE_DEG_MULTIPLIER
         """
         if self.circuit_data and "characteristics" in self.circuit_data:
-            return self.circuit_data["characteristics"].get("tire_degradation", 1.0)
-        return 1.0
+            return self.circuit_data["characteristics"].get("tire_degradation", config.DEFAULT_TIRE_DEG_MULTIPLIER)
+        return config.DEFAULT_TIRE_DEG_MULTIPLIER
 
     def get_drs_zones(self):
         """

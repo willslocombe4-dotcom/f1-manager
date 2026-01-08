@@ -182,6 +182,10 @@ LAST_LAPS_NO_PIT = 3          # Don't pit in last N laps
 # DRS (Drag Reduction System)
 DRS_DETECTION_TIME = 1.0      # Gap required to car ahead (in seconds)
 DRS_SPEED_BOOST = 0.08        # +8% speed boost when DRS is active
+DRS_ENABLED_FROM_LAP = 2      # DRS becomes available from this lap onwards
+
+# Track Characteristics
+DEFAULT_TIRE_DEG_MULTIPLIER = 1.0  # Default tire degradation multiplier for custom tracks
 
 
 
