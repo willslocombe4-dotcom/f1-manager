@@ -248,12 +248,13 @@ class F1Manager:
     def _handle_track_selection_event(self, event):
         """Handle events in track selection state"""
         result = self.track_selection.handle_event(event)
-        
+
         if isinstance(result, tuple) and result[0] == "select":
-            # ESC was pressed - store selected track name, waypoints, and decorations, return to menu
+            # ESC was pressed - store selected track name, waypoints, decorations, and circuit_id, return to menu
             self.selected_track_name = result[1]
             self.selected_waypoints = result[2]
             self.selected_decorations = result[3] if len(result) > 3 else None
+            self.selected_circuit_id = result[4] if len(result) > 4 else None
             self.main_menu.set_selected_track(self.selected_track_name)
             self.state = config.GAME_STATE_MENU
 

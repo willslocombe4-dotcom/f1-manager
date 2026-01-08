@@ -4,6 +4,7 @@ Track Selection Screen - Browse and select tracks for racing
 import pygame
 import config
 from race.track_loader import get_available_tracks, load_track_waypoints, load_track_with_decorations, get_default_waypoints
+from data.circuits import get_all_circuits, get_circuit_by_id, get_circuit_name
 
 
 class TrackSelectionScreen:
@@ -44,9 +45,10 @@ class TrackSelectionScreen:
         # Currently selected track (persisted selection)
         self.current_selection_name = "Default Circuit"
         
-        # Pending waypoints and decorations for the current selection (loaded when track is selected)
+        # Pending waypoints, decorations, and circuit_id for the current selection (loaded when track is selected)
         self._pending_waypoints = None
         self._pending_decorations = None
+        self._pending_circuit_id = None
         
         # Colors for selected indicator
         self.color_selected_badge = (0, 180, 80)  # Green for "SELECTED" badge
@@ -55,23 +57,44 @@ class TrackSelectionScreen:
         self._load_tracks()
         
     def _load_tracks(self):
-        """Load available tracks from directory"""
+        """Load available tracks from directory and F1 circuits"""
         self.tracks = []
-        
-        # Add default track first
+
+        # Add F1 circuits first (from data/circuits.py)
+        circuit_ids = get_all_circuits()
+        for circuit_id in circuit_ids:
+            circuit_data = get_circuit_by_id(circuit_id)
+            if circuit_data:
+                self.tracks.append({
+                    'name': circuit_data['name'],
+                    'circuit_id': circuit_id,
+                    'location': circuit_data.get('location', 'Unknown'),
+                    'length_km': circuit_data.get('length_km', 0),
+                    'type': circuit_data.get('type', 'permanent'),
+                    'num_waypoints': len(circuit_data.get('waypoints', [])),
+                    'is_f1_circuit': True,
+                    'is_default': False,
+                    'filepath': None,
+                })
+
+        # Add default track
         self.tracks.append({
             'name': 'Default Circuit',
-            'filepath': None,  # None means use default waypoints
+            'filepath': None,
+            'circuit_id': None,
             'num_waypoints': 65,
             'is_default': True,
+            'is_f1_circuit': False,
         })
-        
-        # Add tracks from directory
+
+        # Add custom tracks from directory
         available = get_available_tracks()
         for track in available:
             track['is_default'] = False
+            track['is_f1_circuit'] = False
+            track['circuit_id'] = None
             self.tracks.append(track)
-        
+
         # Reset selection
         self.selected_index = 0
         self.scroll_offset = 0
@@ -90,10 +113,10 @@ class TrackSelectionScreen:
     def handle_event(self, event):
         """
         Handle input events.
-        
+
         Returns:
             tuple or None:
-                - ("select", track_name, waypoints) when ESC is pressed (confirm and exit)
+                - ("select", track_name, waypoints, decorations, circuit_id) when ESC is pressed (confirm and exit)
                 - None if no action (stay on screen)
         """
         if event.type == pygame.KEYDOWN:
@@ -120,8 +143,8 @@ class TrackSelectionScreen:
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 self._select_track()  # Just select, don't return
             elif event.key == pygame.K_ESCAPE:
-                # Return selection when exiting (waypoints, decorations)
-                return ("select", self.current_selection_name, self._pending_waypoints, self._pending_decorations)
+                # Return selection when exiting (waypoints, decorations, circuit_id)
+                return ("select", self.current_selection_name, self._pending_waypoints, self._pending_decorations, self._pending_circuit_id)
                 
         elif event.type == pygame.MOUSEMOTION:
             self._handle_mouse_hover(event.pos)
@@ -169,26 +192,36 @@ class TrackSelectionScreen:
         """Mark the currently highlighted track as selected (but don't exit screen)"""
         if not self.tracks:
             return
-            
+
         track = self.tracks[self.selected_index]
         track_name = track['name']
-        
+
         # Update current selection name
         self.current_selection_name = track_name
-        
-        # Load and store waypoints and decorations for when we exit
-        if track.get('is_default') or track.get('filepath') is None:
-            self._pending_waypoints = None  # None means use default
+
+        # Check if this is an F1 circuit
+        if track.get('is_f1_circuit'):
+            # F1 circuit - use circuit_id, no waypoints/decorations needed
+            self._pending_circuit_id = track.get('circuit_id')
+            self._pending_waypoints = None
             self._pending_decorations = None
+        elif track.get('is_default') or track.get('filepath') is None:
+            # Default track
+            self._pending_waypoints = None
+            self._pending_decorations = None
+            self._pending_circuit_id = None
         else:
+            # Custom track from file
             waypoints, decorations = load_track_with_decorations(track['filepath'])
             if waypoints is None:
                 # Fallback to default if loading fails
                 self._pending_waypoints = None
                 self._pending_decorations = None
+                self._pending_circuit_id = None
             else:
                 self._pending_waypoints = waypoints
                 self._pending_decorations = decorations
+                self._pending_circuit_id = None
     
     def _handle_mouse_hover(self, pos):
         """Update hover state based on mouse position"""
@@ -350,9 +383,20 @@ class TrackSelectionScreen:
             
             # Draw track info
             info_parts = []
-            if is_default:
+            if track.get('is_f1_circuit'):
+                # F1 circuit - show location and length
+                location = track.get('location', 'Unknown')
+                length_km = track.get('length_km', 0)
+                info_parts.append(location)
+                info_parts.append(f"{length_km:.3f} km")
+            elif is_default:
                 info_parts.append("Built-in")
-            info_parts.append(f"{track.get('num_waypoints', '?')} waypoints")
+                info_parts.append(f"{track.get('num_waypoints', '?')} waypoints")
+            else:
+                # Custom track
+                info_parts.append("Custom Track")
+                info_parts.append(f"{track.get('num_waypoints', '?')} waypoints")
+
             info_str = " | ".join(info_parts)
             info_text = self.font_track_info.render(info_str, True, self.color_subtitle)
             self.selection_surface.blit(info_text, (item_rect.left + 20, y_pos + 38))
