@@ -60,6 +60,10 @@ class Car:
         # Track characteristics (updated during race)
         self.track_tire_deg_multiplier = 1.0  # Default multiplier for custom tracks
 
+        # DRS (Drag Reduction System)
+        self.is_drs_available = False  # True if within 1 second of car ahead
+        self.is_drs_active = False     # True if DRS available AND in DRS zone
+
         # Dynamic speed (recalculated each frame)
         self.current_pace = config.BASE_SPEED
 
@@ -162,10 +166,14 @@ class Car:
 
         # Cap tire penalty at maximum
         pace *= (1.0 - min(tire_penalty, runtime_config.max_tire_penalty))
-        
+
         # 7. Lap-to-lap variance (calculated once per lap in update())
         pace *= self.current_lap_variance
-        
+
+        # 8. DRS boost (if available and in DRS zone)
+        if self.is_drs_active:
+            pace *= (1.0 + config.DRS_SPEED_BOOST)
+
         return pace
 
     def should_pit(self, total_race_laps):
@@ -242,6 +250,19 @@ class Car:
         # This allows circuits to have different tire wear characteristics
         # (e.g., Suzuka 1.4x harder on tires than Monaco 0.7x)
         self.track_tire_deg_multiplier = track.get_tire_degradation_multiplier()
+
+        # DRS Detection and Activation
+        # DRS is available if within 1 second of car ahead (from previous frame)
+        # and is active if available AND currently in a DRS zone
+        self.is_drs_available = (
+            self.position > 1 and  # Not the leader
+            self.lap > 1 and  # Not on first lap (DRS enabled from lap 2)
+            self.gap_to_ahead_time <= config.DRS_DETECTION_TIME
+        )
+        self.is_drs_active = (
+            self.is_drs_available and
+            track.is_in_drs_zone(self.progress)
+        )
 
         # Handle pit stop timing
         if self.is_pitting:

@@ -179,5 +179,9 @@ PIT_CHANCE_NEAR_CLIFF = 0.3   # 30% chance to pit when near cliff
 PIT_SPEED_PENALTY = 0.3       # Speed multiplier during pit (30% of normal)
 LAST_LAPS_NO_PIT = 3          # Don't pit in last N laps
 
+# DRS (Drag Reduction System)
+DRS_DETECTION_TIME = 1.0      # Gap required to car ahead (in seconds)
+DRS_SPEED_BOOST = 0.08        # +8% speed boost when DRS is active
+
 
 
