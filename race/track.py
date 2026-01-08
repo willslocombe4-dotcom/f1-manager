@@ -3,6 +3,7 @@ F1 Track - Circuit layout and waypoint generation
 """
 import math
 import config
+from data import circuits
 
 
 def normalize_angle(angle):
@@ -34,20 +35,28 @@ def get_angle_between_segments(p1, p2, p3):
 class Track:
     """Represents an F1 circuit with waypoints for car movement"""
 
-    def __init__(self, waypoints=None, decorations=None):
+    def __init__(self, waypoints=None, decorations=None, circuit_id=None):
         self.center_x = config.TRACK_CENTER_X
         self.center_y = config.TRACK_CENTER_Y
         self.outer_radius = config.TRACK_OUTER_RADIUS
         self.inner_radius = config.TRACK_INNER_RADIUS
         self.racing_line_radius = (self.outer_radius + self.inner_radius) // 2
 
-        # Use provided waypoints or generate default
+        # Circuit metadata
+        self.circuit_id = circuit_id
+        self.circuit_data = None
+        if circuit_id:
+            self.circuit_data = circuits.get_circuit_by_id(circuit_id)
+
+        # Use provided waypoints, circuit waypoints, or generate default
         if waypoints is not None:
             self.waypoints = waypoints
+        elif self.circuit_data:
+            self.waypoints = self.circuit_data["waypoints"]
         else:
             self.waypoints = self._generate_waypoints()
         self.track_length = len(self.waypoints)
-        
+
         # Decorations (kerbs and gravel traps)
         # Format: {'kerbs': [{'boundary': 'left'|'right', 'start': int, 'end': int}, ...],
         #          'gravel': [{'boundary': 'left'|'right', 'start': int, 'end': int}, ...]}
@@ -337,8 +346,137 @@ class Track:
     def has_explicit_decorations(self):
         """
         Check if track has explicit decorations defined.
-        
+
         Returns:
             bool: True if decorations are defined, False otherwise
         """
         return bool(self.decorations.get('kerbs') or self.decorations.get('gravel'))
+
+    # =============================================================================
+    # CIRCUIT METADATA ACCESS METHODS
+    # =============================================================================
+
+    def get_circuit_name(self):
+        """
+        Get the full name of the circuit.
+
+        Returns:
+            str: Circuit name or None if not a real F1 circuit
+        """
+        if self.circuit_data:
+            return self.circuit_data.get("name")
+        return None
+
+    def get_circuit_location(self):
+        """
+        Get the location of the circuit.
+
+        Returns:
+            str: Circuit location or None if not a real F1 circuit
+        """
+        if self.circuit_data:
+            return self.circuit_data.get("location")
+        return None
+
+    def get_circuit_length_km(self):
+        """
+        Get the length of the circuit in kilometers.
+
+        Returns:
+            float: Circuit length in km or None if not a real F1 circuit
+        """
+        if self.circuit_data:
+            return self.circuit_data.get("length_km")
+        return None
+
+    def get_circuit_type(self):
+        """
+        Get the type of circuit (street or permanent).
+
+        Returns:
+            str: 'street' or 'permanent', or None if not a real F1 circuit
+        """
+        if self.circuit_data:
+            return self.circuit_data.get("type")
+        return None
+
+    def get_tire_degradation_multiplier(self):
+        """
+        Get the tire degradation multiplier for this circuit.
+        Different circuits wear tires at different rates.
+
+        Returns:
+            float: Tire degradation multiplier (0.7 to 1.4), defaults to 1.0
+        """
+        if self.circuit_data and "characteristics" in self.circuit_data:
+            return self.circuit_data["characteristics"].get("tire_degradation", 1.0)
+        return 1.0
+
+    def get_drs_zones(self):
+        """
+        Get DRS zones for this circuit.
+        DRS zones are defined as progress ranges (0.0 to 1.0).
+
+        Returns:
+            list: List of dicts with 'start' and 'end' keys, or empty list if none
+        """
+        if self.circuit_data:
+            return self.circuit_data.get("drs_zones", [])
+        return []
+
+    def is_in_drs_zone(self, progress):
+        """
+        Check if a given progress value is within a DRS zone.
+
+        Args:
+            progress: Current progress around track (0.0 to 1.0)
+
+        Returns:
+            bool: True if in a DRS zone, False otherwise
+        """
+        drs_zones = self.get_drs_zones()
+        for zone in drs_zones:
+            # Handle progress wrapping (DRS zone may cross start/finish)
+            start = zone["start"]
+            end = zone["end"]
+
+            if start <= end:
+                # Normal case: zone doesn't cross start/finish
+                if start <= progress <= end:
+                    return True
+            else:
+                # Zone crosses start/finish line
+                if progress >= start or progress <= end:
+                    return True
+        return False
+
+    def get_track_characteristics(self):
+        """
+        Get track characteristics (tire degradation, overtaking difficulty, etc.).
+
+        Returns:
+            dict: Track characteristics or empty dict if not a real F1 circuit
+        """
+        if self.circuit_data:
+            return self.circuit_data.get("characteristics", {})
+        return {}
+
+    def get_famous_corners(self):
+        """
+        Get list of famous corners on this circuit.
+
+        Returns:
+            list: List of dicts with 'name' and 'description', or empty list
+        """
+        if self.circuit_data:
+            return self.circuit_data.get("famous_corners", [])
+        return []
+
+    def is_real_f1_circuit(self):
+        """
+        Check if this is a real F1 circuit or a custom track.
+
+        Returns:
+            bool: True if real F1 circuit, False if custom/default track
+        """
+        return self.circuit_data is not None
