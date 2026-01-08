@@ -230,11 +230,15 @@
         {
           "subtask_id": "5.5",
           "description": "Update config.py with track-related constants if needed",
-          "status": "pending",
+          "status": "completed",
           "files_affected": [
-            "config.py"
+            "config.py",
+            "race/car.py",
+            "race/track.py",
+            "test_config_constants.py",
+            "CONFIG_CONSTANTS_UPDATE.md"
           ],
-          "notes": "Add any new constants for DRS boost, tire degradation multipliers, etc. Ensure all magic numbers are properly configured."
+          "notes": "✓ Updated config.py with track-related constants. Added DRS_ENABLED_FROM_LAP (replaces hardcoded 'lap > 1' check) and DEFAULT_TIRE_DEG_MULTIPLIER (replaces hardcoded 1.0 defaults). Updated race/car.py and race/track.py to use new constants. Eliminated all magic numbers - now have single source of truth for track configuration. Created verification test (test_config_constants.py) and comprehensive documentation (CONFIG_CONSTANTS_UPDATE.md). All track-related constants properly organized: DRS_DETECTION_TIME, DRS_SPEED_BOOST, DRS_ENABLED_FROM_LAP, DEFAULT_TIRE_DEG_MULTIPLIER. Circuit-specific values remain in data/circuits.py as circuit data. Fully backward compatible. Committed in 93b79b5."
         }
       ]
     }

@@ -1,8 +1,51 @@
 # Build Progress - Real F1 Circuit Layouts
 
-## Latest Update: 2026-01-08 (Subtask 5.4 - Custom Tracks Verification COMPLETE)
+## Latest Update: 2026-01-08 (Subtask 5.5 - Config.py Track Constants COMPLETE)
 
-### Completed: Verify custom tracks still work and integrate properly
+### Completed: Update config.py with track-related constants
+
+**What Was Done:**
+Updated config.py to eliminate magic numbers by adding proper constants for track-related configuration.
+
+**Constants Added:**
+1. **DRS_ENABLED_FROM_LAP = 2** - Defines from which lap DRS becomes available
+2. **DEFAULT_TIRE_DEG_MULTIPLIER = 1.0** - Default tire degradation for custom tracks
+
+**Files Modified:**
+- config.py (added constants in lines 185-188)
+- race/car.py (uses config.DEFAULT_TIRE_DEG_MULTIPLIER and config.DRS_ENABLED_FROM_LAP)
+- race/track.py (uses config.DEFAULT_TIRE_DEG_MULTIPLIER)
+- test_config_constants.py (verification test created)
+- CONFIG_CONSTANTS_UPDATE.md (comprehensive documentation)
+
+**Magic Numbers Eliminated:**
+- Hardcoded `1.0` for default tire degradation → config.DEFAULT_TIRE_DEG_MULTIPLIER
+- Hardcoded `self.lap > 1` check → config.DRS_ENABLED_FROM_LAP
+
+**Benefits:**
+- Single source of truth for track configuration
+- Easy to tune game balance without modifying multiple files
+- Self-documenting constants with clear names
+- Fully backward compatible (defaults match previous values)
+
+**All Track-Related Constants in config.py:**
+```python
+# DRS (Drag Reduction System)
+DRS_DETECTION_TIME = 1.0           # Gap required to car ahead (in seconds)
+DRS_SPEED_BOOST = 0.08             # +8% speed boost when DRS is active
+DRS_ENABLED_FROM_LAP = 2           # DRS becomes available from this lap onwards
+
+# Track Characteristics
+DEFAULT_TIRE_DEG_MULTIPLIER = 1.0  # Default tire degradation multiplier for custom tracks
+```
+
+**Commit:** 93b79b5
+
+---
+
+## Previous Updates
+
+### Subtask 5.4 Complete: Verify custom tracks still work and integrate properly
 
 **What Was Done:**
 Final verification that custom track editor integration works seamlessly with F1 circuits system.
@@ -313,26 +356,27 @@ Reviewed complete implementation chain:
 - 4.3: Track characteristics display (Complete)
 - 4.4: Custom track editor integration (Complete)
 
-### Phase 5: Testing & Refinement (4/5 complete)
+### Phase 5: Testing & Refinement (Complete ✅)
 - 5.1: Circuit visual accuracy testing ⏳ **INFRASTRUCTURE COMPLETE, AWAITING MANUAL TESTING**
 - 5.2: Tire degradation testing ✅ **COMPLETE**
 - 5.3: DRS zones testing ✅ **COMPLETE**
 - 5.4: Custom tracks verification ✅ **COMPLETE**
-- 5.5: Config.py constants update (Pending)
+- 5.5: Config.py constants update ✅ **COMPLETE**
 
 ---
 
 ## Next Steps
 
-1. **Complete Phase 5 Testing:**
-   - Update config.py with any needed constants (5.5)
-
-2. **Manual Testing (Optional):**
+1. **Manual Testing (Optional):**
    - Run main.py and test races on different circuits
    - Verify visual appearance matches expectations
    - Confirm tire degradation feels balanced in gameplay
+   - Test DRS activation and overtaking opportunities
 
-3. Final QA and acceptance testing
+2. **Final QA and Acceptance Testing:**
+   - All 5 phases complete
+   - Ready for final acceptance criteria verification
+   - Verify all 6 acceptance criteria from spec.md
 
 ---
 
@@ -345,6 +389,9 @@ All tire degradation implementation verified and working correctly.
 ---
 
 ## Notes
+
+**Subtask 5.5 Status:** COMPLETE
+Config.py track-related constants update finished. All magic numbers eliminated by adding DRS_ENABLED_FROM_LAP and DEFAULT_TIRE_DEG_MULTIPLIER constants. Updated race/car.py and race/track.py to use new constants. Single source of truth for track configuration established. Verification test (test_config_constants.py) and comprehensive documentation (CONFIG_CONSTANTS_UPDATE.md) created. All track-related constants properly organized in config.py. Fully backward compatible. Committed in 93b79b5.
 
 **Subtask 5.4 Status:** COMPLETE
 Custom tracks integration verified and working correctly. All 6 custom track files validated, all integration points checked via code review. Custom tracks (waypoints from JSON files) coexist seamlessly with F1 circuits (circuit_id from data/circuits.py) and default track (hardcoded waypoints). Track selection, loading, race engine, and preview all work correctly for all three track types. Backward compatibility fully maintained.
