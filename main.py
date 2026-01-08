@@ -312,6 +312,19 @@ class F1Manager:
                 # Restart race with same track
                 self._start_race(waypoints=self.current_waypoints, decorations=self.current_decorations)
 
+            # Commentary pause control (C key)
+            elif event.key == pygame.K_c:
+                if self.timing_screen:
+                    self.timing_screen.commentary_panel.toggle_pause()
+
+            # Commentary scroll control (UP/DOWN arrow keys)
+            elif event.key == pygame.K_UP:
+                if self.timing_screen:
+                    self.timing_screen.commentary_panel.scroll_up()
+            elif event.key == pygame.K_DOWN:
+                if self.timing_screen:
+                    self.timing_screen.commentary_panel.scroll_down()
+
             # Speed control keys (1-5)
             elif event.key == pygame.K_1:
                 self.race_engine.set_simulation_speed(1)

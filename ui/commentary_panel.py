@@ -2,6 +2,7 @@
 Commentary Panel - F1-style race commentary display
 """
 import pygame
+import time
 import config
 from assets.colors import get_team_color
 from race.commentary import CommentaryGenerator
@@ -48,6 +49,7 @@ class CommentaryPanel:
         self.font_title = pygame.font.Font(None, 28)
         self.font_commentary = pygame.font.Font(None, 22)
         self.font_lap = pygame.font.Font(None, 18)
+        self.font_pause = pygame.font.Font(None, 20)
 
         # Display settings
         self.max_events_shown = 5
@@ -58,6 +60,12 @@ class CommentaryPanel:
         self.scroll_offset = 0.0
         self.target_scroll = 0.0
         self.scroll_speed = 0.15
+
+        # Pause functionality
+        self.is_paused = False
+        self.manual_scroll_index = 0  # Index offset for manual scrolling
+        self.last_interaction_time = 0
+        self.auto_resume_delay = 5.0  # Seconds of inactivity before auto-resume
 
         # Cache for team lookup
         self.driver_to_team = {}
@@ -73,6 +81,26 @@ class CommentaryPanel:
         for car in cars:
             self.driver_to_team[car.driver_name] = car.team
 
+    def toggle_pause(self):
+        """Toggle commentary pause state"""
+        self.is_paused = not self.is_paused
+        self.last_interaction_time = time.time()
+        if not self.is_paused:
+            # Reset manual scroll when resuming
+            self.manual_scroll_index = 0
+
+    def scroll_up(self):
+        """Scroll up through commentary (show older events)"""
+        if self.is_paused:
+            self.manual_scroll_index = min(self.manual_scroll_index + 1, 20)
+            self.last_interaction_time = time.time()
+
+    def scroll_down(self):
+        """Scroll down through commentary (show newer events)"""
+        if self.is_paused:
+            self.manual_scroll_index = max(self.manual_scroll_index - 1, 0)
+            self.last_interaction_time = time.time()
+
     def render(self, event_manager):
         """
         Render the commentary panel.
@@ -80,6 +108,12 @@ class CommentaryPanel:
         Args:
             event_manager: EventManager instance with race events
         """
+        # Check for auto-resume after inactivity
+        if self.is_paused and self.last_interaction_time > 0:
+            if time.time() - self.last_interaction_time > self.auto_resume_delay:
+                self.is_paused = False
+                self.manual_scroll_index = 0
+
         # Clear panel surface
         self.panel_surface.fill(config.TIMING_BG_COLOR)
 
@@ -104,11 +138,18 @@ class CommentaryPanel:
             2
         )
 
-        # Get recent events and generate commentary
-        recent_events = event_manager.get_recent_events(self.max_events_shown)
+        # Get recent events based on pause state
+        if self.is_paused:
+            # When paused, get more events and offset by manual scroll
+            all_events = event_manager.get_recent_events(self.max_events_shown + self.manual_scroll_index)
+            recent_events = all_events[self.manual_scroll_index:self.manual_scroll_index + self.max_events_shown]
+        else:
+            # Normal auto-scroll behavior
+            recent_events = event_manager.get_recent_events(self.max_events_shown)
 
-        # Update scroll animation
-        self._update_scroll()
+        # Update scroll animation (disabled when paused)
+        if not self.is_paused:
+            self._update_scroll()
 
         # Draw commentary messages
         self._draw_events(recent_events)
@@ -127,15 +168,23 @@ class CommentaryPanel:
         )
 
         # Accent line at top (F1 broadcast style)
+        # Orange when paused, red when active
+        accent_color = (255, 140, 0) if self.is_paused else (255, 0, 0)
         pygame.draw.rect(
             self.panel_surface,
-            (255, 0, 0),  # F1 red accent
+            accent_color,
             (0, 0, self.width, 3)
         )
 
         # Title text
         title_text = self.font_title.render("RACE COMMENTARY", True, config.TEXT_COLOR)
         self.panel_surface.blit(title_text, (self.padding, 10))
+
+        # Draw pause indicator if paused
+        if self.is_paused:
+            pause_text = self.font_pause.render("PAUSED (C to resume)", True, (255, 140, 0))
+            pause_x = self.width - pause_text.get_width() - self.padding
+            self.panel_surface.blit(pause_text, (pause_x, 12))
 
     def _update_scroll(self):
         """Update smooth scroll animation"""
