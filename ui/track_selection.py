@@ -9,17 +9,18 @@ from data.circuits import get_all_circuits, get_circuit_by_id, get_circuit_name
 
 class TrackSelectionScreen:
     """Screen for browsing and selecting tracks"""
-    
+
     def __init__(self, surface):
         self.surface = surface
         self.selection_surface = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
-        
+
         # Fonts
         self.font_title = pygame.font.Font(None, 72)
         self.font_subtitle = pygame.font.Font(None, 32)
         self.font_track = pygame.font.Font(None, 42)
         self.font_track_info = pygame.font.Font(None, 24)
         self.font_hint = pygame.font.Font(None, 24)
+        self.font_preview_label = pygame.font.Font(None, 28)
         
         # Colors
         self.color_bg = (15, 15, 15)
@@ -41,6 +42,11 @@ class TrackSelectionScreen:
         self.scroll_offset = 0  # First visible track index
         self.max_visible = 8    # Tracks visible at once
         self.max_scroll = 0     # Calculated when tracks loaded
+
+        # Preview/minimap dimensions
+        self.preview_size = 320  # Size of preview box (square)
+        self.preview_x = config.SCREEN_WIDTH - self.preview_size - 80
+        self.preview_y = 220
         
         # Currently selected track (persisted selection)
         self.current_selection_name = "Default Circuit"
@@ -247,19 +253,22 @@ class TrackSelectionScreen:
         """Render the track selection screen"""
         # Clear with dark background
         self.selection_surface.fill(self.color_bg)
-        
+
         # Draw decorative elements
         self._draw_background_decoration()
-        
+
         # Draw title
         self._draw_title()
-        
+
         # Draw track list
         self._draw_track_list()
-        
+
+        # Draw circuit preview/minimap
+        self._draw_circuit_preview()
+
         # Draw footer
         self._draw_footer()
-        
+
         # Blit to main surface
         self.surface.blit(self.selection_surface, (0, 0))
     
@@ -318,10 +327,11 @@ class TrackSelectionScreen:
     
     def _draw_track_list(self):
         """Draw the list of available tracks with virtual scrolling"""
-        center_x = config.SCREEN_WIDTH // 2
+        # Shift list to the left to make room for preview on right
+        center_x = 550
         start_y = 220
         item_height = 70
-        item_width = 500
+        item_width = 600
         
         # Pre-allocate track rects for all tracks (None for non-visible)
         self.track_rects = [None] * len(self.tracks)
@@ -407,7 +417,7 @@ class TrackSelectionScreen:
     
     def _draw_scroll_indicators(self, center_x, start_y, item_height):
         """Draw scroll indicators showing more content exists"""
-        indicator_x = center_x + 280
+        indicator_x = center_x + 330
         
         # Up arrow if we can scroll up
         if self.scroll_offset > 0:
@@ -443,6 +453,144 @@ class TrackSelectionScreen:
         hint_rect = hint_text.get_rect(center=(center_x, footer_y))
         self.selection_surface.blit(hint_text, hint_rect)
     
+    def _draw_circuit_preview(self):
+        """Draw a minimap preview of the currently selected/hovered circuit"""
+        if not self.tracks:
+            return
+
+        # Get currently hovered track
+        track = self.tracks[self.selected_index]
+
+        # Draw preview box background
+        preview_rect = pygame.Rect(
+            self.preview_x,
+            self.preview_y,
+            self.preview_size,
+            self.preview_size
+        )
+        pygame.draw.rect(self.selection_surface, self.color_box_bg, preview_rect, border_radius=8)
+        pygame.draw.rect(self.selection_surface, self.color_box_border, preview_rect, width=2, border_radius=8)
+
+        # Draw label
+        label = "CIRCUIT PREVIEW"
+        label_text = self.font_preview_label.render(label, True, self.color_subtitle)
+        label_rect = label_text.get_rect(center=(self.preview_x + self.preview_size // 2, self.preview_y - 20))
+        self.selection_surface.blit(label_text, label_rect)
+
+        # Get waypoints for this track
+        waypoints = self._get_track_waypoints(track)
+
+        if waypoints and len(waypoints) >= 3:
+            # Scale and center waypoints to fit in preview box
+            scaled_waypoints = self._scale_waypoints_to_preview(waypoints)
+
+            # Draw track shape
+            self._draw_track_shape(scaled_waypoints, preview_rect)
+
+    def _get_track_waypoints(self, track):
+        """Get waypoints for a given track"""
+        if track.get('is_f1_circuit'):
+            # F1 circuit - get from circuit data
+            circuit_data = get_circuit_by_id(track.get('circuit_id'))
+            if circuit_data:
+                return circuit_data.get('waypoints', [])
+        elif track.get('is_default'):
+            # Default track - use default waypoints
+            return get_default_waypoints()
+        else:
+            # Custom track - load from file
+            if track.get('filepath'):
+                waypoints = load_track_waypoints(track['filepath'])
+                return waypoints
+        return None
+
+    def _scale_waypoints_to_preview(self, waypoints):
+        """Scale waypoints to fit in the preview box"""
+        if not waypoints or len(waypoints) < 2:
+            return []
+
+        # Find bounding box of waypoints
+        min_x = min(wp[0] for wp in waypoints)
+        max_x = max(wp[0] for wp in waypoints)
+        min_y = min(wp[1] for wp in waypoints)
+        max_y = max(wp[1] for wp in waypoints)
+
+        # Calculate dimensions
+        width = max_x - min_x
+        height = max_y - min_y
+
+        if width == 0 or height == 0:
+            return []
+
+        # Calculate scale factor (with padding)
+        padding = 40
+        available_size = self.preview_size - (padding * 2)
+        scale = min(available_size / width, available_size / height)
+
+        # Scale and center waypoints
+        scaled = []
+        for x, y in waypoints:
+            # Scale relative to bounding box
+            scaled_x = (x - min_x) * scale
+            scaled_y = (y - min_y) * scale
+
+            # Center in preview box
+            center_offset_x = (self.preview_size - (width * scale)) / 2
+            center_offset_y = (self.preview_size - (height * scale)) / 2
+
+            # Add preview box position
+            final_x = self.preview_x + center_offset_x + scaled_x
+            final_y = self.preview_y + center_offset_y + scaled_y
+
+            scaled.append((final_x, final_y))
+
+        return scaled
+
+    def _draw_track_shape(self, waypoints, preview_rect):
+        """Draw the track shape in the preview box"""
+        if len(waypoints) < 3:
+            return
+
+        # Draw track outline (thicker line for visibility)
+        pygame.draw.lines(
+            self.selection_surface,
+            self.color_accent,
+            True,  # Closed loop
+            waypoints,
+            3  # Line width
+        )
+
+        # Draw subtle fill to show track area
+        # Create a semi-transparent surface
+        track_surface = pygame.Surface((self.preview_size, self.preview_size), pygame.SRCALPHA)
+
+        # Adjust waypoints relative to preview box for drawing on the track_surface
+        relative_waypoints = [(x - self.preview_x, y - self.preview_y) for x, y in waypoints]
+
+        # Draw filled polygon with transparency
+        pygame.draw.polygon(
+            track_surface,
+            (220, 0, 0, 60),  # Red with alpha (RGBA)
+            relative_waypoints
+        )
+
+        # Blit the transparent surface
+        self.selection_surface.blit(track_surface, (self.preview_x, self.preview_y))
+
+        # Draw start/finish line indicator (first waypoint)
+        if waypoints:
+            start_x, start_y = waypoints[0]
+            # Draw a small circle at the start
+            pygame.draw.circle(
+                self.selection_surface,
+                (255, 255, 255),
+                (int(start_x), int(start_y)),
+                5
+            )
+            # Draw start/finish text
+            start_label = self.font_track_info.render("START", True, (200, 200, 200))
+            self.selection_surface.blit(start_label, (int(start_x) + 10, int(start_y) - 10))
+
     def refresh_tracks(self):
         """Refresh the track list from disk"""
         self._load_tracks()
