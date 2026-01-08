@@ -5,10 +5,21 @@ import pygame
 import config
 from assets.colors import get_team_color
 from race.commentary import CommentaryGenerator
+from race.race_events import EventType
 
 
 class CommentaryPanel:
     """Renders F1-style race commentary panel"""
+
+    # F1 broadcast-style event type colors
+    EVENT_TYPE_COLORS = {
+        EventType.RACE_START: (0, 200, 100),      # Green - Race start
+        EventType.OVERTAKE: (255, 140, 0),        # Orange - Action/overtake
+        EventType.PIT_STOP: (100, 150, 255),      # Blue - Strategic pit stop
+        EventType.FASTEST_LAP: (200, 50, 200),    # Purple - Fastest lap (F1 purple sector)
+        EventType.BLUE_FLAG: (100, 180, 255),     # Light blue - Blue flag
+        EventType.RACE_END: (255, 215, 0),        # Gold - Race finish
+    }
 
     def __init__(self, surface, x, y, width, height):
         """
@@ -83,13 +94,14 @@ class CommentaryPanel:
         # Draw header
         self._draw_header()
 
-        # Draw separator line
+        # Draw separator line below header (subtle separation)
+        separator_y = 40
         pygame.draw.line(
             self.panel_surface,
-            config.TRACK_LINE_COLOR,
-            (self.padding, 45),
-            (self.width - self.padding, 45),
-            1
+            (60, 60, 60),
+            (0, separator_y),
+            (self.width, separator_y),
+            2
         )
 
         # Get recent events and generate commentary
@@ -105,9 +117,25 @@ class CommentaryPanel:
         self.surface.blit(self.panel_surface, (self.x, self.y))
 
     def _draw_header(self):
-        """Draw commentary panel header"""
+        """Draw F1 broadcast-style commentary panel header"""
+        # Title background bar
+        header_height = 40
+        pygame.draw.rect(
+            self.panel_surface,
+            (30, 30, 30),
+            (0, 0, self.width, header_height)
+        )
+
+        # Accent line at top (F1 broadcast style)
+        pygame.draw.rect(
+            self.panel_surface,
+            (255, 0, 0),  # F1 red accent
+            (0, 0, self.width, 3)
+        )
+
+        # Title text
         title_text = self.font_title.render("RACE COMMENTARY", True, config.TEXT_COLOR)
-        self.panel_surface.blit(title_text, (self.padding, 12))
+        self.panel_surface.blit(title_text, (self.padding, 10))
 
     def _update_scroll(self):
         """Update smooth scroll animation"""
@@ -124,7 +152,7 @@ class CommentaryPanel:
         Args:
             events: List of RaceEvent instances to display
         """
-        start_y = 55
+        start_y = 50  # Start just below header separator
 
         for i, event in enumerate(events):
             y_pos = start_y + i * self.event_height + int(self.scroll_offset)
@@ -137,60 +165,82 @@ class CommentaryPanel:
             fade_factor = 1.0 - (i * 0.15)
             fade_factor = max(0.4, min(1.0, fade_factor))
 
+            # Get event type color
+            event_color = self.EVENT_TYPE_COLORS.get(event.event_type, (150, 150, 150))
+
             # Draw event background (alternating)
+            bg_y = y_pos
+            bg_height = self.event_height - 5
+
             if i % 2 == 0:
                 bg_rect = pygame.Rect(
                     self.padding,
-                    y_pos,
+                    bg_y,
                     self.width - self.padding * 2,
-                    self.event_height - 5
+                    bg_height
                 )
                 pygame.draw.rect(
                     self.panel_surface,
                     (25, 25, 25),
-                    bg_rect
+                    bg_rect,
+                    border_radius=3
                 )
 
-            # Draw lap badge
-            self._draw_lap_badge(event, self.padding + 5, y_pos + 10, fade_factor)
+            # Draw event type color accent bar (F1 broadcast style)
+            accent_width = 4
+            accent_color = self._apply_fade(event_color, fade_factor)
+            pygame.draw.rect(
+                self.panel_surface,
+                accent_color,
+                (self.padding, bg_y, accent_width, bg_height),
+                border_radius=2
+            )
+
+            # Draw lap badge with event type color
+            self._draw_lap_badge(event, self.padding + 10, y_pos + 10, fade_factor, event_color)
 
             # Draw commentary text with color-coded driver names
-            self._draw_commentary_text(event, self.padding + 60, y_pos + 8, fade_factor)
+            self._draw_commentary_text(event, self.padding + 65, y_pos + 8, fade_factor)
 
-    def _draw_lap_badge(self, event, x, y, fade_factor):
+    def _draw_lap_badge(self, event, x, y, fade_factor, event_color):
         """
-        Draw lap number badge.
+        Draw lap number badge with F1 broadcast styling.
 
         Args:
             event: RaceEvent instance
             x: X position
             y: Y position
             fade_factor: Opacity factor (0.0-1.0)
+            event_color: RGB tuple for event type color
         """
-        # Badge background
+        # Enhanced badge dimensions
         badge_width = 45
-        badge_height = 24
+        badge_height = 26
 
-        # Apply fade to color
-        bg_color = tuple(int(c * fade_factor) for c in (50, 50, 50))
-        border_color = tuple(int(c * fade_factor) for c in config.TRACK_LINE_COLOR)
+        # Apply fade to colors
+        bg_color = tuple(int(c * fade_factor) for c in (35, 35, 35))
+        border_color = self._apply_fade(event_color, fade_factor * 0.8)
 
+        # Draw badge background with subtle gradient effect
         pygame.draw.rect(
             self.panel_surface,
             bg_color,
             (x, y, badge_width, badge_height),
-            border_radius=3
+            border_radius=4
         )
+
+        # Draw colored border (thicker for more prominence)
         pygame.draw.rect(
             self.panel_surface,
             border_color,
             (x, y, badge_width, badge_height),
-            1,
-            border_radius=3
+            2,
+            border_radius=4
         )
 
-        # Lap text
-        lap_text = self.font_lap.render(f"L{event.lap}", True, self._apply_fade(config.TEXT_COLOR, fade_factor))
+        # Lap text with bright event color
+        lap_color = self._apply_fade(event_color, min(fade_factor * 1.1, 1.0))
+        lap_text = self.font_lap.render(f"L{event.lap}", True, lap_color)
         lap_rect = lap_text.get_rect(center=(x + badge_width // 2, y + badge_height // 2))
         self.panel_surface.blit(lap_text, lap_rect)
 
@@ -295,9 +345,9 @@ class CommentaryPanel:
             fade_factor: Opacity factor (0.0-1.0)
 
         Returns:
-            tuple: Faded RGB color
+            tuple: Faded RGB color (clamped to 0-255)
         """
-        return tuple(int(c * fade_factor) for c in color)
+        return tuple(max(0, min(255, int(c * fade_factor))) for c in color)
 
     def trigger_scroll(self):
         """Trigger smooth scroll animation when new event appears"""
