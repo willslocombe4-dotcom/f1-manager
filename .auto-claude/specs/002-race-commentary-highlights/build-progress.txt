@@ -1,6 +1,6 @@
 # Race Commentary Highlights - Build Progress
 
-## Status: Phase 2 In Progress - Commentary Generator
+## Status: Phase 3 Complete - Moving to Phase 4 Integration
 
 ## Plan Overview
 Created implementation plan with 4 phases, 10 subtasks total.
@@ -16,8 +16,8 @@ Created implementation plan with 4 phases, 10 subtasks total.
 - [x] 2.2 Add commentary templates for all event types
 
 ### Phase 3: Commentary Panel UI (2 subtasks)
-- [ ] 3.1 Create CommentaryPanel UI component
-- [ ] 3.2 Style commentary panel to match F1 broadcast
+- [x] 3.1 Create CommentaryPanel UI component
+- [x] 3.2 Style commentary panel to match F1 broadcast
 
 ### Phase 4: Integration and Polish (4 subtasks)
 - [ ] 4.1 Integrate CommentaryPanel into TimingScreen
@@ -43,3 +43,5 @@ Created implementation plan with 4 phases, 10 subtasks total.
 - 2025-01-08: Completed subtask 1.4 - Integrated event detection into RaceEngine.update() for overtakes, pit stops, fastest laps, and race start events
 - 2025-01-08: Completed subtask 2.1 - Created CommentaryGenerator class that converts race events into F1 broadcast-style commentary with authentic terminology
 - 2025-01-08: Completed subtask 2.2 - Added 3-6 varied commentary templates for each event type with randomization. Includes authentic F1 phrases like DRS, purple sector, Box box box, checkered flag, etc. All templates use random.choice() for variety
+- 2025-01-08: Completed subtask 3.1 - Created CommentaryPanel UI component that renders commentary messages in a scrollable panel. Displays 3-5 recent events with lap badges, team color-coded driver names, smooth scrolling animation, and fade effects. Follows project patterns with F1 broadcast styling
+- 2025-01-08: Completed subtask 3.2 - Applied F1 broadcast-style visual design to commentary panel. Added event type color coding with accent bars (green/orange/blue/purple/gold), enhanced lap badges with colored borders, F1 red header accent, improved visual hierarchy. All acceptance criteria met
