@@ -13,7 +13,7 @@ Created implementation plan with 4 phases, 10 subtasks total.
 
 ### Phase 2: Commentary Generator (2 subtasks)
 - [x] 2.1 Create CommentaryGenerator class
-- [ ] 2.2 Add commentary templates for all event types
+- [x] 2.2 Add commentary templates for all event types
 
 ### Phase 3: Commentary Panel UI (2 subtasks)
 - [ ] 3.1 Create CommentaryPanel UI component
@@ -42,3 +42,4 @@ Created implementation plan with 4 phases, 10 subtasks total.
 - 2025-01-08: Completed subtask 1.3 - Added previous_position tracking and position_changed() method to Car class
 - 2025-01-08: Completed subtask 1.4 - Integrated event detection into RaceEngine.update() for overtakes, pit stops, fastest laps, and race start events
 - 2025-01-08: Completed subtask 2.1 - Created CommentaryGenerator class that converts race events into F1 broadcast-style commentary with authentic terminology
+- 2025-01-08: Completed subtask 2.2 - Added 3-6 varied commentary templates for each event type with randomization. Includes authentic F1 phrases like DRS, purple sector, Box box box, checkered flag, etc. All templates use random.choice() for variety
