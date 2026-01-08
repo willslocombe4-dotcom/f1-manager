@@ -61,7 +61,7 @@
           "id": "1.4",
           "title": "Integrate event detection into RaceEngine",
           "description": "Add event detection logic to RaceEngine.update() to detect overtakes, pit stops, fastest laps",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "race/race_engine.py"
           ],
@@ -71,7 +71,9 @@
             "Detects pit stop start/end events",
             "Tracks and detects new fastest lap",
             "Generates RACE_START event when race begins"
-          ]
+          ],
+          "notes": "Successfully integrated event detection into RaceEngine.update(). The system now:\n1. Owns an EventManager instance to track all race events\n2. Detects RACE_START event when race begins with iconic F1 \"Lights out and away we go!\" message\n3. Detects OVERTAKE events by comparing position changes between frames using the position_changed() method\n4. Detects PIT_STOP events for both entry (\"enters the pits\") and exit (\"exits the pits on {compound}s\")\n5. Tracks the overall fastest lap time and detects new FASTEST_LAP events with formatted time display (MM:SS.mmm)\n6. Updates previous_position after event detection to prepare for next frame's overtake detection\n\nAll events include lap number, timestamp, involved drivers list, and descriptive messages. Tested with simulation showing correct detection of race start and overtakes. Pit stops and fastest laps will be detected during full races.",
+          "updated_at": "2026-01-08T23:33:44.308923+00:00"
         }
       ]
     },
@@ -220,5 +222,5 @@
     "issues": ""
   },
   "notes": "Commentary system follows existing patterns: separate race logic (race/) from UI (ui/). Events stored in RaceEngine, rendered by TimingScreen. Uses existing config.py colors and fonts.",
-  "last_updated": "2026-01-08T23:30:56.188467+00:00"
+  "last_updated": "2026-01-08T23:33:44.308934+00:00"
 }
