@@ -11,13 +11,21 @@ from settings.runtime_config import runtime_config
 class RaceEngine:
     """Manages the entire race simulation"""
 
-    def __init__(self, waypoints=None, decorations=None):
-        self.track = Track(waypoints=waypoints, decorations=decorations)
+    def __init__(self, waypoints=None, decorations=None, circuit_id=None):
+        """
+        Initialize race engine with track.
+
+        Args:
+            waypoints: Custom waypoints (overrides circuit_id if both provided)
+            decorations: Track decorations (kerbs, gravel)
+            circuit_id: ID of real F1 circuit to load (e.g., "monaco", "silverstone")
+        """
+        self.track = Track(waypoints=waypoints, decorations=decorations, circuit_id=circuit_id)
         self.cars = []
         self.race_started = False
         self.race_time = 0.0
         self.total_laps = runtime_config.race_laps  # Use runtime config
-        
+
         # Simulation speed control
         self.simulation_speed = runtime_config.simulation_speed
 

@@ -94,14 +94,16 @@ class F1Manager:
         self.running = True
         self.paused = False
         
-        # Current track waypoints and decorations (None = default)
+        # Current track waypoints, decorations, and circuit ID (None = default)
         self.current_waypoints = None
         self.current_decorations = None
-        
+        self.current_circuit_id = None
+
         # Selected track from Track Selection
         self.selected_track_name = "Default Circuit"  # Track name for display
         self.selected_waypoints = None  # Waypoints for race (None = default)
         self.selected_decorations = None  # Decorations for race (None = default)
+        self.selected_circuit_id = None  # Circuit ID for real F1 circuits
 
         # Initialize UI components (always available)
         self.main_menu = MainMenu(self.screen)
@@ -119,11 +121,12 @@ class F1Manager:
         self.timing_screen = None
         self.results_screen = None
     
-    def _start_race(self, waypoints=None, decorations=None):
-        """Initialize and start a race with optional custom waypoints and decorations"""
+    def _start_race(self, waypoints=None, decorations=None, circuit_id=None):
+        """Initialize and start a race with optional custom waypoints, decorations, or circuit ID"""
         self.current_waypoints = waypoints
         self.current_decorations = decorations
-        self.race_engine = RaceEngine(waypoints=waypoints, decorations=decorations)
+        self.current_circuit_id = circuit_id
+        self.race_engine = RaceEngine(waypoints=waypoints, decorations=decorations, circuit_id=circuit_id)
         self.track_renderer = TrackRenderer(self.screen)
         self.timing_screen = TimingScreen(self.screen)
         self.results_screen = ResultsScreen(self.screen)
@@ -228,9 +231,9 @@ class F1Manager:
     def _handle_menu_event(self, event):
         """Handle events in main menu state"""
         action = self.main_menu.handle_event(event)
-        
+
         if action == "quick_race":
-            self._start_race(waypoints=self.selected_waypoints, decorations=self.selected_decorations)  # Use selected track or default
+            self._start_race(waypoints=self.selected_waypoints, decorations=self.selected_decorations, circuit_id=self.selected_circuit_id)  # Use selected track or default
         elif action == "track_selection":
             self.track_selection.refresh_tracks()
             self.track_selection.set_current_selection(self.selected_track_name)
@@ -310,7 +313,7 @@ class F1Manager:
 
             elif event.key == pygame.K_r:
                 # Restart race with same track
-                self._start_race(waypoints=self.current_waypoints, decorations=self.current_decorations)
+                self._start_race(waypoints=self.current_waypoints, decorations=self.current_decorations, circuit_id=self.current_circuit_id)
 
             # Speed control keys (1-5)
             elif event.key == pygame.K_1:
@@ -343,7 +346,7 @@ class F1Manager:
             
             elif event.key == pygame.K_r:
                 # Restart race with same track
-                self._start_race(waypoints=self.current_waypoints, decorations=self.current_decorations)
+                self._start_race(waypoints=self.current_waypoints, decorations=self.current_decorations, circuit_id=self.current_circuit_id)
                 return
             
             # Scroll events
