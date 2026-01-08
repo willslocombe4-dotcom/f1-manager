@@ -86,7 +86,7 @@
           "id": "2.1",
           "title": "Create CommentaryGenerator class",
           "description": "Generator that converts race events into broadcast-style commentary text",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "race/commentary.py"
           ],
@@ -94,7 +94,9 @@
             "CommentaryGenerator with generate_commentary(event) method",
             "Returns formatted string with F1 terminology",
             "Uses driver full names and team names appropriately"
-          ]
+          ],
+          "notes": "Created CommentaryGenerator class with generate_commentary(event) method that converts race events into broadcast-style commentary. Supports all event types (RACE_START, OVERTAKE, PIT_STOP, FASTEST_LAP, RACE_END, BLUE_FLAG) with authentic F1 terminology. Uses driver full names from event.drivers list. Includes intelligent pit stop commentary that detects entry/exit and tire compound. Implementation follows project patterns with proper docstrings and tested with all event types.",
+          "updated_at": "2026-01-08T23:36:28.092563+00:00"
         },
         {
           "id": "2.2",
@@ -222,5 +224,5 @@
     "issues": ""
   },
   "notes": "Commentary system follows existing patterns: separate race logic (race/) from UI (ui/). Events stored in RaceEngine, rendered by TimingScreen. Uses existing config.py colors and fonts.",
-  "last_updated": "2026-01-08T23:33:44.308934+00:00"
+  "last_updated": "2026-01-08T23:36:28.092573+00:00"
 }

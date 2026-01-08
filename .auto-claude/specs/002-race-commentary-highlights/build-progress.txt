@@ -1,6 +1,6 @@
 # Race Commentary Highlights - Build Progress
 
-## Status: Phase 1 Complete ✓ - Ready for Phase 2
+## Status: Phase 2 In Progress - Commentary Generator
 
 ## Plan Overview
 Created implementation plan with 4 phases, 10 subtasks total.
@@ -12,7 +12,7 @@ Created implementation plan with 4 phases, 10 subtasks total.
 - [x] 1.4 Integrate event detection into RaceEngine
 
 ### Phase 2: Commentary Generator (2 subtasks)
-- [ ] 2.1 Create CommentaryGenerator class
+- [x] 2.1 Create CommentaryGenerator class
 - [ ] 2.2 Add commentary templates for all event types
 
 ### Phase 3: Commentary Panel UI (2 subtasks)
@@ -41,3 +41,4 @@ Created implementation plan with 4 phases, 10 subtasks total.
 - 2025-01-08: Completed subtask 1.2 - Created EventManager class with add_event, get_recent_events, and clear_events methods
 - 2025-01-08: Completed subtask 1.3 - Added previous_position tracking and position_changed() method to Car class
 - 2025-01-08: Completed subtask 1.4 - Integrated event detection into RaceEngine.update() for overtakes, pit stops, fastest laps, and race start events
+- 2025-01-08: Completed subtask 2.1 - Created CommentaryGenerator class that converts race events into F1 broadcast-style commentary with authentic terminology
