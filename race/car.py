@@ -38,6 +38,7 @@ class Car:
 
         # Race state
         self.position = starting_position
+        self.previous_position = starting_position  # Track position changes for overtakes
         self.starting_position = starting_position
         self.progress = 0.0
         self.lap = 1
@@ -310,7 +311,7 @@ class Car:
     def get_status(self):
         """
         Get current car status for display.
-        
+
         Returns:
             str: Status indicator ('PIT', 'OUT', or '')
         """
@@ -319,6 +320,15 @@ class Car:
         elif self.pit_stops > 0 and self.tire_age <= 2:
             return "OUT"  # Just exited pits
         return ""
+
+    def position_changed(self):
+        """
+        Check if the car's position has changed this frame.
+
+        Returns:
+            bool: True if position changed from previous frame
+        """
+        return self.position != self.previous_position
 
     def __repr__(self):
         return f"Car({self.driver_short}, P{self.position}, Lap {self.lap}, {self.team_tier}-tier)"
