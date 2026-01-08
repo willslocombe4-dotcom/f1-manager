@@ -56,7 +56,10 @@ class Car:
 
         # Synergy (calculated once at init)
         self.synergy_level = self._calculate_synergy()
-        
+
+        # Track characteristics (updated during race)
+        self.track_tire_deg_multiplier = 1.0  # Default multiplier for custom tracks
+
         # Dynamic speed (recalculated each frame)
         self.current_pace = config.BASE_SPEED
 
@@ -147,15 +150,16 @@ class Car:
         fuel_penalty = self.fuel_load * runtime_config.fuel_start_penalty
         pace *= (1.0 - fuel_penalty)
         
-        # 6. Tire degradation
+        # 6. Tire degradation (with track-specific multiplier)
         deg_rate = runtime_config.tire_deg_rates.get(self.tire_compound, 0.002)
-        tire_penalty = self.tire_age * deg_rate
-        
+        # Apply track characteristics: circuits like Suzuka (1.4x) wear tires faster than Monaco (0.7x)
+        tire_penalty = self.tire_age * deg_rate * self.track_tire_deg_multiplier
+
         # Check for tire cliff
         cliff_lap = runtime_config.tire_cliff_laps.get(self.tire_compound, 20)
         if self.tire_age >= cliff_lap:
             tire_penalty += runtime_config.tire_cliff_penalty
-        
+
         # Cap tire penalty at maximum
         pace *= (1.0 - min(tire_penalty, runtime_config.max_tire_penalty))
         
@@ -228,18 +232,23 @@ class Car:
     def update(self, track, dt=1.0, total_race_laps=20):
         """
         Update car position with dynamic pace calculation.
-        
+
         Args:
             track: Track object for position calculation
             dt: Delta time in frames
             total_race_laps: Total laps in the race (for pit strategy)
         """
+        # Get track-specific tire degradation multiplier
+        # This allows circuits to have different tire wear characteristics
+        # (e.g., Suzuka 1.4x harder on tires than Monaco 0.7x)
+        self.track_tire_deg_multiplier = track.get_tire_degradation_multiplier()
+
         # Handle pit stop timing
         if self.is_pitting:
             self.pit_time_remaining -= dt / config.FPS
             if self.pit_time_remaining <= 0:
                 self._complete_pit_stop()
-        
+
         # Calculate current pace (dynamic each frame)
         self.current_pace = self._calculate_current_pace()
         
