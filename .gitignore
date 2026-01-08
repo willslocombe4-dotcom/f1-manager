@@ -24,3 +24,6 @@ logs/
 # Temp files
 *.tmp
 *.bak
+
+# Auto Claude data directory
+.auto-claude/
