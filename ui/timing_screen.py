@@ -4,6 +4,7 @@ Timing Screen - F1-style live timing display
 import pygame
 import config
 from assets.colors import get_team_color, get_team_short_name
+from ui.commentary_panel import CommentaryPanel
 
 class TimingScreen:
     """Renders F1-style live timing screen"""
@@ -15,6 +16,20 @@ class TimingScreen:
         self.font_medium = pygame.font.Font(None, 24)
         self.font_small = pygame.font.Font(None, 20)
 
+        # Initialize commentary panel below timing rows
+        # Commentary starts at y=650, giving 250 pixels for commentary (fits 3 events)
+        commentary_y = 650
+        commentary_height = config.SCREEN_HEIGHT - commentary_y
+        self.commentary_panel = CommentaryPanel(
+            self.timing_surface,
+            x=0,
+            y=commentary_y,
+            width=config.TIMING_VIEW_WIDTH,
+            height=commentary_height
+        )
+        # Adjust max events to fit available space (250px - 40px header) / 70px per event ≈ 3 events
+        self.commentary_panel.max_events_shown = 3
+
     def render(self, race_engine):
         """Render the timing screen"""
         # Clear timing surface
@@ -25,6 +40,12 @@ class TimingScreen:
 
         # Draw timing rows
         self._draw_timing_rows(race_engine)
+
+        # Draw commentary panel
+        # Update driver-team mapping for color coding
+        self.commentary_panel.update_driver_team_map(race_engine.cars)
+        # Render commentary with events from race engine
+        self.commentary_panel.render(race_engine.event_manager)
 
         # Blit to main surface
         self.surface.blit(self.timing_surface, (config.TIMING_VIEW_X, 0))
