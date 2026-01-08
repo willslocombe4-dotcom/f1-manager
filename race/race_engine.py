@@ -5,6 +5,7 @@ import random
 from race.track import Track
 from race.car import Car
 from data.teams import TEAMS_DATA
+from race.race_events import EventManager, RaceEvent, EventType
 import config
 from settings.runtime_config import runtime_config
 
@@ -17,9 +18,14 @@ class RaceEngine:
         self.race_started = False
         self.race_time = 0.0
         self.total_laps = runtime_config.race_laps  # Use runtime config
-        
+
         # Simulation speed control
         self.simulation_speed = runtime_config.simulation_speed
+
+        # Event management
+        self.event_manager = EventManager()
+        self.fastest_lap_time = None
+        self.fastest_lap_driver = None
 
         # Initialize cars
         self._initialize_cars()
@@ -86,7 +92,7 @@ class RaceEngine:
         """Update all cars and race state"""
         # Apply simulation speed to delta time
         dt = self.simulation_speed
-        
+
         # Update each car with race context
         for car in self.cars:
             car.update(self.track, dt=dt, total_race_laps=self.total_laps)
@@ -141,8 +147,102 @@ class RaceEngine:
             else:
                 car.lateral_offset = 0
 
+        # Detect race events
+        self._detect_events()
+
+        # Update previous positions for next frame's overtake detection
+        for car in self.cars:
+            car.previous_position = car.position
+
         # Update race time (scaled by simulation speed)
         self.race_time += self.simulation_speed / config.FPS
+
+    def _detect_events(self):
+        """Detect and record race events like overtakes, pit stops, and fastest laps."""
+        leader = self.get_leader()
+        if not leader:
+            return
+
+        current_lap = leader.lap
+
+        # Detect overtakes - check cars that moved up in position
+        for car in self.cars:
+            if car.position_changed():
+                # Car changed position - check if it's an overtake (moved up)
+                if car.position < car.previous_position:
+                    # Find who was overtaken (currently directly behind)
+                    if car.position < len(self.cars):
+                        overtaken_car = self.cars[car.position]  # Car that's now behind
+
+                        # Create overtake event
+                        message = f"{car.driver_short} overtakes {overtaken_car.driver_short}"
+                        event = RaceEvent(
+                            event_type=EventType.OVERTAKE,
+                            lap=current_lap,
+                            timestamp=self.race_time,
+                            drivers=[car.driver_name, overtaken_car.driver_name],
+                            message=message
+                        )
+                        self.event_manager.add_event(event)
+
+        # Detect pit stops - check cars entering or exiting pits
+        for car in self.cars:
+            # Pit stop start: car just started pitting this frame
+            # We detect this when is_pitting is True and pit_time_remaining is close to the full pit time
+            if car.is_pitting and car.pit_time_remaining > (runtime_config.pit_stop_base_time - 0.1):
+                message = f"{car.driver_short} enters the pits"
+                event = RaceEvent(
+                    event_type=EventType.PIT_STOP,
+                    lap=current_lap,
+                    timestamp=self.race_time,
+                    drivers=[car.driver_name],
+                    message=message
+                )
+                self.event_manager.add_event(event)
+
+            # Pit stop end: car just completed pit stop (tire_age == 0 and not pitting)
+            # This happens right after _complete_pit_stop() is called
+            elif not car.is_pitting and car.tire_age == 0 and car.pit_stops > 0:
+                # Check if this is a fresh exit (within first few frames of new tires)
+                if car.progress < 0.05:  # Near start of lap
+                    message = f"{car.driver_short} exits the pits on {car.tire_compound}s"
+                    event = RaceEvent(
+                        event_type=EventType.PIT_STOP,
+                        lap=current_lap,
+                        timestamp=self.race_time,
+                        drivers=[car.driver_name],
+                        message=message
+                    )
+                    self.event_manager.add_event(event)
+
+        # Detect fastest laps - check cars that just completed a lap
+        for car in self.cars:
+            if car.last_lap_time and car.last_lap_time > 0:
+                # Check if this is a new overall fastest lap
+                if self.fastest_lap_time is None or car.last_lap_time < self.fastest_lap_time:
+                    # Only create event if lap time has changed (not on initialization)
+                    if self.fastest_lap_time is not None:
+                        self.fastest_lap_time = car.last_lap_time
+                        self.fastest_lap_driver = car.driver_name
+
+                        # Format lap time as MM:SS.mmm
+                        minutes = int(car.last_lap_time // 60)
+                        seconds = car.last_lap_time % 60
+                        time_str = f"{minutes}:{seconds:06.3f}"
+
+                        message = f"{car.driver_short} sets fastest lap: {time_str}"
+                        event = RaceEvent(
+                            event_type=EventType.FASTEST_LAP,
+                            lap=current_lap,
+                            timestamp=self.race_time,
+                            drivers=[car.driver_name],
+                            message=message
+                        )
+                        self.event_manager.add_event(event)
+                    else:
+                        # First lap completed, just record it without event
+                        self.fastest_lap_time = car.last_lap_time
+                        self.fastest_lap_driver = car.driver_name
 
     def get_cars_by_position(self):
         """Get cars sorted by current position"""
@@ -170,3 +270,16 @@ class RaceEngine:
     def start_race(self):
         """Start the race"""
         self.race_started = True
+
+        # Generate RACE_START event
+        leader = self.get_leader()
+        if leader:
+            message = f"Lights out and away we go!"
+            event = RaceEvent(
+                event_type=EventType.RACE_START,
+                lap=1,
+                timestamp=0.0,
+                drivers=[],
+                message=message
+            )
+            self.event_manager.add_event(event)

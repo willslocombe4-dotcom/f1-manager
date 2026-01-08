@@ -30,7 +30,7 @@
           "id": "1.2",
           "title": "Create EventManager class",
           "description": "Create EventManager to collect, store, and provide access to race events with history limit",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "race/race_events.py"
           ],
@@ -38,20 +38,24 @@
             "EventManager stores up to 50 recent events",
             "Methods: add_event(), get_recent_events(count), clear_events()",
             "Events sorted by timestamp (newest first for display)"
-          ]
+          ],
+          "notes": "Created EventManager class with all required methods (add_event, get_recent_events, clear_events). Events are stored newest-first with configurable max_events limit (default 50). Includes __len__ and __repr__ for convenience. Implementation follows project patterns with proper docstrings and tested functionality.",
+          "updated_at": "2026-01-08T23:28:40.772140+00:00"
         },
         {
           "id": "1.3",
           "title": "Add position tracking to Car class",
           "description": "Track previous position in Car class to detect overtakes between frames",
-          "status": "pending",
+          "status": "completed",
           "files": [
             "race/car.py"
           ],
           "acceptance_criteria": [
             "Car.previous_position field tracks last frame position",
             "Car.position_changed() method returns True if position changed this frame"
-          ]
+          ],
+          "notes": "Added previous_position field to Car class (initialized to starting_position) and position_changed() method that returns True when position differs from previous_position. This enables overtake detection between frames. Implementation follows existing code patterns with proper docstrings. Verified with test script.",
+          "updated_at": "2026-01-08T23:30:56.188452+00:00"
         },
         {
           "id": "1.4",
@@ -216,5 +220,5 @@
     "issues": ""
   },
   "notes": "Commentary system follows existing patterns: separate race logic (race/) from UI (ui/). Events stored in RaceEngine, rendered by TimingScreen. Uses existing config.py colors and fonts.",
-  "last_updated": "2026-01-08T23:26:56.268048+00:00"
+  "last_updated": "2026-01-08T23:30:56.188467+00:00"
 }

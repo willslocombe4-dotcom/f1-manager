@@ -3,7 +3,7 @@
   "spec": "002-race-commentary-highlights",
   "state": "building",
   "subtasks": {
-    "completed": 1,
+    "completed": 3,
     "total": 12,
     "in_progress": 1,
     "failed": 0
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 3,
+    "number": 5,
     "started_at": "2026-01-08T23:23:04.586395"
   },
-  "last_update": "2026-01-08T23:27:16.993020"
+  "last_update": "2026-01-08T23:31:15.549123"
 }
