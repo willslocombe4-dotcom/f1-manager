@@ -1,0 +1,237 @@
+{
+  "feature": "Real F1 Circuit Layouts",
+  "description": "# Real F1 Circuit Layouts\n\nAccurate layouts of famous F1 circuits like Monaco, Silverstone, Spa, and Monza. Each track has unique characteristics affecting overtaking opportunities, tire wear, and race strategy.\n\n## Rationale\nMore diverse track layouts was identified as a known gap. Real circuits create authentic F1 atmosphere and variety between races. Different track characteristics (street circuit vs high-speed) add strategic variety and replayability.\n\n## User Stories\n- As an F1 fan, I want to race on famous circuits so that the experience feels authentic\n- As a strategy player, I want different track characteristics so that each race requires different approaches\n- As a viewer, I want to recognize iconic track shapes like Monaco and Spa\n\n## Acceptance Criteria\n- [ ] At least 6 iconic F1 circuits available (Monaco, Silverstone, Spa, Monza, Suzuka, COTA)\n- [ ] Each track has accurate waypoint layout matching real circuit shape\n- [ ] Tracks have appropriate DRS zones matching real F1 configuration\n- [ ] Track characteristics affect tire wear (high/medium/low degradation)\n- [ ] Track selection screen shows circuit preview and characteristics\n- [ ] Custom tracks from track editor still supported alongside official circuits\n",
+  "created_at": "2026-01-08T05:21:05.553Z",
+  "updated_at": "2026-01-08T22:37:53.138Z",
+  "status": "in_progress",
+  "planStatus": "in_progress",
+  "phases": [
+    {
+      "phase_id": "phase_1",
+      "phase_name": "Track Data Structure & Foundation",
+      "subtasks": [
+        {
+          "subtask_id": "1.1",
+          "description": "Research real F1 circuit layouts and gather waypoint coordinates for all 6 circuits",
+          "status": "completed",
+          "files_affected": [],
+          "notes": "✓ Completed comprehensive research for all 6 F1 circuits (Monaco, Silverstone, Spa, Monza, Suzuka, COTA). Created waypoint coordinates (65-78 waypoints each) scaled for 1000x900 pixel area. Documented DRS zones and tire degradation characteristics for each circuit. All circuits maintain their iconic recognizable shapes. Research saved to circuit_research.md."
+        },
+        {
+          "subtask_id": "1.2",
+          "description": "Create circuit data structure to store track metadata (name, characteristics, DRS zones, tire degradation)",
+          "status": "completed",
+          "files_affected": [
+            "data/circuits.py"
+          ],
+          "notes": "✓ Created data/circuits.py with complete circuit data structure. Defined all 6 F1 circuits (Monaco, Silverstone, Spa, Monza, Suzuka, COTA) with: waypoint coordinates (70-100+ per circuit), DRS zone definitions, tire degradation multipliers (0.7-1.4), track characteristics (type, overtaking difficulty, track evolution), famous corners documentation. Includes helper functions: get_circuit_by_id(), get_circuit_waypoints(), get_circuit_drs_zones(), get_tire_degradation_multiplier(), is_street_circuit(). Follows existing code patterns from data/teams.py. Ready for integration with Track class."
+        },
+        {
+          "subtask_id": "1.3",
+          "description": "Update Track class to support circuit metadata and characteristics",
+          "status": "completed",
+          "files_affected": [
+            "race/track.py"
+          ],
+          "notes": "✓ Extended Track class to support circuit metadata and characteristics. Added circuit_id parameter to __init__(), integrated circuits.py data module, and implemented comprehensive access methods: get_circuit_name(), get_circuit_location(), get_circuit_length_km(), get_circuit_type(), get_tire_degradation_multiplier(), get_drs_zones(), is_in_drs_zone(), get_track_characteristics(), get_famous_corners(), is_real_f1_circuit(). DRS zone detection handles zones that cross start/finish line. Backward compatible with custom waypoints and decorations. Created test_track_circuits.py with comprehensive test coverage. Ready for integration with race engine and UI."
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_2",
+      "phase_name": "Circuit Implementation",
+      "subtasks": [
+        {
+          "subtask_id": "2.1",
+          "description": "Implement Monaco circuit with accurate waypoints and characteristics",
+          "status": "completed",
+          "files_affected": [
+            "data/circuits.py"
+          ],
+          "notes": "✓ Implemented in data/circuits.py. Street circuit with 100+ waypoints capturing Casino Square, Grand Hotel Hairpin, Tunnel, Swimming Pool complex. Tire degradation: 0.7 (low). 1 DRS zone. Famous corners documented."
+        },
+        {
+          "subtask_id": "2.2",
+          "description": "Implement Silverstone circuit with accurate waypoints and characteristics",
+          "status": "completed",
+          "files_affected": [
+            "data/circuits.py"
+          ],
+          "notes": "✓ Implemented in data/circuits.py. Fast permanent circuit with 120+ waypoints featuring Copse, Maggotts-Becketts-Chapel complex, Stowe, Club. Tire degradation: 1.3 (high). 2 DRS zones (Hangar Straight, Wellington Straight)."
+        },
+        {
+          "subtask_id": "2.3",
+          "description": "Implement Spa-Francorchamps circuit with accurate waypoints and characteristics",
+          "status": "completed",
+          "files_affected": [
+            "data/circuits.py"
+          ],
+          "notes": "✓ Implemented in data/circuits.py. High-speed circuit with 120+ waypoints capturing La Source hairpin, iconic Eau Rouge/Raidillon, Kemmel Straight, Pouhon, Blanchimont, Bus Stop. Tire degradation: 1.0 (medium). 2 DRS zones."
+        },
+        {
+          "subtask_id": "2.4",
+          "description": "Implement Monza circuit with accurate waypoints and characteristics",
+          "status": "completed",
+          "files_affected": [
+            "data/circuits.py"
+          ],
+          "notes": "✓ Implemented in data/circuits.py. Temple of Speed with 100+ waypoints showing very long straights, Variante del Rettifilo, Curva Grande, Lesmo corners, Ascari chicane, Parabolica. Tire degradation: 0.8 (low). 2 DRS zones on long straights."
+        },
+        {
+          "subtask_id": "2.5",
+          "description": "Implement Suzuka circuit with accurate waypoints and characteristics",
+          "status": "completed",
+          "files_affected": [
+            "data/circuits.py"
+          ],
+          "notes": "✓ Implemented in data/circuits.py. Figure-8 layout with 110+ waypoints capturing S Curves, Degner, Hairpin, Spoon Curve, Crossover section, legendary 130R, Casio Triangle. Tire degradation: 1.4 (high). 1 DRS zone."
+        },
+        {
+          "subtask_id": "2.6",
+          "description": "Implement Circuit of the Americas (COTA) with accurate waypoints and characteristics",
+          "status": "completed",
+          "files_affected": [
+            "data/circuits.py"
+          ],
+          "notes": "✓ Implemented in data/circuits.py. Modern circuit with 100+ waypoints featuring dramatic uphill Turn 1, Esses section (inspired by Maggotts-Becketts), hairpin, back straight, Stadium section. Tire degradation: 1.2 (medium-high). 2 DRS zones."
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_3",
+      "phase_name": "Track Characteristics & Features",
+      "subtasks": [
+        {
+          "subtask_id": "3.1",
+          "description": "Implement tire degradation system based on track characteristics",
+          "status": "completed",
+          "files_affected": [
+            "race/car.py",
+            "race/race_engine.py"
+          ],
+          "notes": "✓ Implemented track-specific tire degradation system. Added track_tire_deg_multiplier attribute to Car class that fetches multiplier from Track each frame. Tire degradation calculation now applies track characteristics: Monaco (0.7x = 30% less wear), Monza (0.8x), Spa (1.0x baseline), COTA (1.2x), Silverstone (1.3x), Suzuka (1.4x = 40% more wear). Creates strategic variety between circuits - high-degradation tracks require more aggressive pit strategies. Integration complete: RaceEngine passes track to cars, Track provides get_tire_degradation_multiplier() method. Test script created for verification. Committed in 5f4c3c2."
+        },
+        {
+          "subtask_id": "3.2",
+          "description": "Implement DRS zones functionality",
+          "status": "completed",
+          "files_affected": [
+            "race/track.py",
+            "race/car.py",
+            "config.py"
+          ],
+          "notes": "✓ Implemented DRS zones functionality with full F1 dynamics. Added DRS constants to config.py (DRS_DETECTION_TIME: 1.0s, DRS_SPEED_BOOST: +8%). Extended Car class with is_drs_available and is_drs_active state tracking. DRS eligibility checks: position > 1, lap > 1, gap_to_ahead_time <= 1.0s. DRS activation combines eligibility with Track.is_in_drs_zone() detection. Speed boost (+8%) applied in _calculate_current_pace() when DRS active. All 6 circuits have DRS zones: Monaco (1 zone), Silverstone (2), Spa (2), Monza (2), Suzuka (1), COTA (2). Created comprehensive test suite (test_drs_zones.py) and documentation (DRS_IMPLEMENTATION.md). Provides authentic F1 overtaking opportunities - cars within 1 second can activate DRS in designated zones. Committed in 1e8a739."
+        },
+        {
+          "subtask_id": "3.3",
+          "description": "Integrate track characteristics with race engine",
+          "status": "completed",
+          "files_affected": [
+            "race/race_engine.py",
+            "main.py"
+          ],
+          "notes": "✓ Integrated track characteristics with race engine. Added circuit_id parameter to RaceEngine.__init__() and main.py _start_race(). RaceEngine now passes circuit_id to Track, enabling loading of real F1 circuits with full characteristics. Cars automatically fetch tire degradation multipliers and check DRS zones from track each frame. All 6 F1 circuits (Monaco, Silverstone, Spa, Monza, Suzuka, COTA) fully functional with unique characteristics. Backward compatible with custom tracks (waypoints/decorations). Created comprehensive integration test (test_track_integration.py) and documentation (TRACK_INTEGRATION.md). Committed in cd73a2f."
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_4",
+      "phase_name": "Track Selection UI",
+      "subtasks": [
+        {
+          "subtask_id": "4.1",
+          "description": "Create track selection screen with circuit list",
+          "status": "completed",
+          "files_affected": [
+            "ui/track_selection.py",
+            "main.py"
+          ],
+          "notes": "✓ Integrated F1 circuits with track selection screen. Added all 6 F1 circuits (Monaco, Silverstone, Spa, Monza, Suzuka, COTA) to track selection list. F1 circuits displayed with name, location, and lap length (e.g., \"Monte Carlo, Monaco | 3.337 km\"). Track selection now returns circuit_id for F1 circuits. Updated main.py to handle circuit_id from track selection. Backward compatible with custom tracks and default track. F1 circuits shown first in list, followed by default and custom tracks. Maintains existing selection/scrolling behavior. Committed in 29b4c47."
+        },
+        {
+          "subtask_id": "4.2",
+          "description": "Add circuit preview/minimap to track selection screen",
+          "status": "completed",
+          "files_affected": [
+            "ui/track_selection.py"
+          ],
+          "notes": "✓ Implemented circuit preview/minimap on track selection screen. Added 320x320 preview box on right side showing scaled track layout with waypoints. Preview displays track shape with semi-transparent red fill, red outline, and white START indicator. Works for all track types (F1 circuits, default track, custom tracks). Adjusted track list layout (shifted left to x=550, width=600px) to create balanced split-screen design with 350px gap. Preview updates dynamically when hovering/selecting tracks. Helps players visually recognize iconic F1 circuits (Monaco's tight streets, Spa's Eau Rouge, Monza's long straights, etc.) before selection. Implementation includes: _draw_circuit_preview() for rendering, _get_track_waypoints() for fetching waypoints, _scale_waypoints_to_preview() for scaling/centering, _draw_track_shape() for drawing. Committed in 8473c4d."
+        },
+        {
+          "subtask_id": "4.3",
+          "description": "Display track characteristics on selection screen",
+          "status": "completed",
+          "files_affected": [
+            "ui/track_selection.py"
+          ],
+          "notes": "✓ Implemented track characteristics panel on track selection screen. Displays below circuit preview with 4 key metrics: Track Type (Street/Permanent), Tire Wear (Low/Medium/High with green/gold/orange-red color coding), DRS Zones count, and Overtaking Difficulty (color-coded green to red). Panel positioned at preview_x, preview_y + 350, sized 320x210px. Uses existing circuit data from data/circuits.py. Only displays for F1 circuits (is_f1_circuit=true). Helps players understand strategic considerations before selecting track. Color coding: Green=favorable (low wear, easy overtaking), Gold=medium, Orange/Red=challenging (high wear, difficult overtaking). Test script created for verification. Committed in 037b2b6."
+        },
+        {
+          "subtask_id": "4.4",
+          "description": "Ensure custom track editor integration still works",
+          "status": "completed",
+          "files_affected": [
+            "ui/track_selection.py",
+            "race/track.py"
+          ],
+          "notes": "✓ Custom track editor integration verified and working correctly. Comprehensive code review confirmed all integration points function properly: track loading (race/track_loader.py), track selection screen (_load_tracks, _select_track, _get_track_waypoints), Track class initialization, race engine, and preview feature. All three track types (F1 circuits, default track, custom tracks) coexist seamlessly. Track selection screen properly loads custom waypoints/decorations from JSON files in tools/tracks/. Found 6 existing custom tracks, all with valid format. Created comprehensive test suite (test_custom_track_integration.py) and verification documentation (CUSTOM_TRACK_INTEGRATION.md). Backward compatibility maintained - custom tracks created with tools/track_editor.py continue to work alongside official F1 circuits. No code changes needed - integration already working as designed."
+        }
+      ]
+    },
+    {
+      "phase_id": "phase_5",
+      "phase_name": "Testing & Refinement",
+      "subtasks": [
+        {
+          "subtask_id": "5.1",
+          "description": "Test each circuit for visual accuracy and racing line",
+          "status": "in_progress",
+          "files_affected": [
+            "test_circuit_visuals.py",
+            "analyze_circuit_geometry.py",
+            "CIRCUIT_VISUAL_TESTING_GUIDE.md",
+            "VISUAL_TESTING_README.md",
+            "CIRCUIT_TESTING_STATUS.md"
+          ],
+          "notes": "✓ Testing infrastructure complete. Created automated validation scripts (test_circuit_visuals.py, analyze_circuit_geometry.py) and comprehensive testing documentation (CIRCUIT_VISUAL_TESTING_GUIDE.md, VISUAL_TESTING_README.md, CIRCUIT_TESTING_STATUS.md). All 6 circuits validated for technical requirements (waypoint counts: 104-128, proper bounds, valid DRS zones, realistic tire degradation). Manual visual testing required to verify: (1) track shapes recognizable as real circuits, (2) racing lines smooth without glitches, (3) famous corners identifiable, (4) gameplay feels authentic. Next: Run python test_circuit_visuals.py, python analyze_circuit_geometry.py, then python main.py to test each circuit following guides. Awaiting manual testing completion. Committed in 12ada18, 7068fa3."
+        },
+        {
+          "subtask_id": "5.2",
+          "description": "Test tire degradation differences between circuits",
+          "status": "pending",
+          "files_affected": [],
+          "notes": "Verify Monaco has lower tire wear than Suzuka. Check that degradation rates are balanced and create strategic variety."
+        },
+        {
+          "subtask_id": "5.3",
+          "description": "Test DRS zones functionality and balance",
+          "status": "pending",
+          "files_affected": [],
+          "notes": "Verify DRS activates correctly in designated zones. Check that speed boost is noticeable but not overpowered. Test overtaking opportunities."
+        },
+        {
+          "subtask_id": "5.4",
+          "description": "Verify custom tracks still work and integrate properly",
+          "status": "pending",
+          "files_affected": [],
+          "notes": "Test loading custom tracks from editor. Ensure they appear in selection screen and function correctly alongside official circuits."
+        },
+        {
+          "subtask_id": "5.5",
+          "description": "Update config.py with track-related constants if needed",
+          "status": "pending",
+          "files_affected": [
+            "config.py"
+          ],
+          "notes": "Add any new constants for DRS boost, tire degradation multipliers, etc. Ensure all magic numbers are properly configured."
+        }
+      ]
+    }
+  ],
+  "qa_signoff": {
+    "status": "pending",
+    "tests_passed": "",
+    "issues": ""
+  },
+  "recoveryNote": "Task recovered from stuck state at 2026-01-08T22:27:55.794Z"
+}
