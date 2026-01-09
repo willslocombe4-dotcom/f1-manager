@@ -223,10 +223,11 @@ def test_spec_acceptance_criteria():
 
     results = []
 
-    # Criterion 1: Commentary panel displays recent race events (last 3-5)
+    # Criterion 1: Commentary panel displays recent race events (2-5)
+    # Updated to 2 events per user feedback to reduce spamminess
     panel = timing_screen.commentary_panel
-    assert panel.max_events_shown in [3, 4, 5], "Panel should show 3-5 events"
-    results.append(("✓", "Commentary panel displays 3-5 recent events"))
+    assert panel.max_events_shown in [2, 3, 4, 5], "Panel should show 2-5 events"
+    results.append(("✓", "Commentary panel displays 2-5 recent events (reduced for readability)"))
 
     # Criterion 2: Events include required types
     events = engine.event_manager.get_recent_events(50)

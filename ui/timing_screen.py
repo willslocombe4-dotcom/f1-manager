@@ -16,10 +16,10 @@ class TimingScreen:
         self.font_medium = pygame.font.Font(None, 24)
         self.font_small = pygame.font.Font(None, 20)
 
-        # Initialize commentary panel below timing rows
-        # Commentary starts at y=650, giving 250 pixels for commentary (fits 3 events)
-        commentary_y = 650
-        commentary_height = config.SCREEN_HEIGHT - commentary_y
+        # Initialize commentary panel at top of timing screen
+        # Commentary starts at y=100 (below timing header), giving space for 2 events
+        commentary_y = 100
+        commentary_height = 200
         self.commentary_panel = CommentaryPanel(
             self.timing_surface,
             x=0,
@@ -27,8 +27,8 @@ class TimingScreen:
             width=config.TIMING_VIEW_WIDTH,
             height=commentary_height
         )
-        # Adjust max events to fit available space (250px - 40px header) / 70px per event ≈ 3 events
-        self.commentary_panel.max_events_shown = 3
+        # Show only 2 events to reduce spamminess and improve readability
+        self.commentary_panel.max_events_shown = 2
 
     def render(self, race_engine):
         """Render the timing screen"""
@@ -81,7 +81,7 @@ class TimingScreen:
 
     def _draw_timing_rows(self, race_engine):
         """Draw timing information for all cars"""
-        start_y = 105
+        start_y = 310  # Start below commentary panel (100 + 200 + 10 spacing)
         row_height = 38
 
         cars = race_engine.get_cars_by_position()

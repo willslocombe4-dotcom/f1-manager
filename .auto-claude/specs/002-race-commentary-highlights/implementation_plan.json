@@ -3,7 +3,7 @@
   "description": "Display text-based commentary for key race events like overtakes, pit stops, and fastest laps. Creates the feeling of watching an F1 broadcast with expert commentary highlighting important moments.",
   "created_at": "2026-01-08T05:21:19.716Z",
   "updated_at": "2026-01-08T23:23:03.187Z",
-  "status": "in_progress",
+  "status": "completed",
   "planStatus": "approved",
   "phases": [
     {
@@ -232,11 +232,46 @@
       ]
     }
   ],
-  "qa_status": {
-    "status": "pending",
-    "tests_passed": "",
-    "issues": ""
+  "qa_signoff": {
+    "status": "approved",
+    "timestamp": "2026-01-09T00:35:00.000000+00:00",
+    "qa_session": 2,
+    "report_file": "qa_report.md",
+    "tests_passed": {
+      "unit": "5/5",
+      "integration": "5/5",
+      "e2e": "N/A"
+    },
+    "verified_by": "qa_agent"
   },
   "notes": "Commentary system follows existing patterns: separate race logic (race/) from UI (ui/). Events stored in RaceEngine, rendered by TimingScreen. Uses existing config.py colors and fonts.",
-  "last_updated": "2026-01-09T00:07:14.719407+00:00"
+  "last_updated": "2026-01-09T00:07:14.719407+00:00",
+  "qa_iteration_history": [
+    {
+      "iteration": 1,
+      "status": "error",
+      "timestamp": "2026-01-09T00:15:12.212046+00:00",
+      "issues": [
+        {
+          "title": "QA error",
+          "description": "QA agent did not update implementation_plan.json"
+        }
+      ]
+    },
+    {
+      "iteration": 2,
+      "status": "approved",
+      "timestamp": "2026-01-09T00:21:19.087245+00:00",
+      "issues": [],
+      "duration_seconds": 366.87
+    }
+  ],
+  "qa_stats": {
+    "total_iterations": 2,
+    "last_iteration": 2,
+    "last_status": "approved",
+    "issues_by_type": {
+      "unknown": 1
+    }
+  }
 }

@@ -52,8 +52,8 @@ class CommentaryPanel:
         self.font_pause = pygame.font.Font(None, 20)
 
         # Display settings
-        self.max_events_shown = 5
-        self.event_height = 70
+        self.max_events_shown = 2  # Default, can be overridden
+        self.event_height = 80  # Increased spacing for better readability
         self.padding = 15
 
         # Scroll animation
