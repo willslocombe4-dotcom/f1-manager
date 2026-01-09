@@ -59,6 +59,14 @@ class CommentaryGenerator:
         "Checkered flag for {winner}!"
     ]
 
+    RACE_END_WITH_MARGIN_TEMPLATES = [
+        "{winner} wins by {margin:.1f} seconds!",
+        "{winner} takes the victory, {margin:.1f}s ahead!",
+        "Victory for {winner}, {margin:.1f} seconds clear!",
+        "{winner} crosses the line with a {margin:.1f}s margin!",
+        "And {winner} wins it by {margin:.1f} seconds!"
+    ]
+
     BLUE_FLAG_TEMPLATES = [
         "Blue flags for {driver}",
         "{driver} shown the blue flags",
@@ -193,13 +201,43 @@ class CommentaryGenerator:
             event: RaceEvent with RACE_END type
 
         Returns:
-            str: Formatted race end commentary
+            str: Formatted race end commentary with margin and notable changes
         """
         if len(event.drivers) >= 1:
             winner = event.drivers[0]
-            # Randomly select from race end templates
-            template = random.choice(self.RACE_END_TEMPLATES)
-            return template.format(winner=winner)
+
+            # Extract margin from message if available (format: "XXX wins by 1.5s")
+            margin = None
+            if "by " in event.message and "s" in event.message:
+                try:
+                    # Extract margin value from message
+                    margin_str = event.message.split("by ")[1].split("s")[0]
+                    margin = float(margin_str)
+                except (IndexError, ValueError):
+                    margin = None
+
+            # Generate base commentary with or without margin
+            if margin is not None and margin > 0:
+                template = random.choice(self.RACE_END_WITH_MARGIN_TEMPLATES)
+                commentary = template.format(winner=winner, margin=margin)
+            else:
+                template = random.choice(self.RACE_END_TEMPLATES)
+                commentary = template.format(winner=winner)
+
+            # Add notable position changes if available
+            if hasattr(event, 'notable_changes') and event.notable_changes:
+                # Randomly choose to mention 1-2 notable drivers
+                num_to_mention = min(random.randint(1, 2), len(event.notable_changes))
+                if num_to_mention > 0:
+                    mentioned = event.notable_changes[:num_to_mention]
+                    if len(mentioned) == 1:
+                        commentary += f" Great drive from {mentioned[0]}!"
+                    else:
+                        # Join all but last with commas, last with "and"
+                        drivers_str = ", ".join(mentioned[:-1]) + " and " + mentioned[-1]
+                        commentary += f" Superb performances from {drivers_str}!"
+
+            return commentary
         else:
             return "And that's the checkered flag!"
 

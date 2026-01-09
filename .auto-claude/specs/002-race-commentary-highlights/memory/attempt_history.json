@@ -47,11 +47,83 @@
         }
       ],
       "status": "completed"
+    },
+    "2.1": {
+      "attempts": [
+        {
+          "session": 6,
+          "timestamp": "2026-01-08T23:37:53.034282",
+          "approach": "Implemented: Generator that converts race events into broadcast-style commentary text",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "2.2": {
+      "attempts": [
+        {
+          "session": 7,
+          "timestamp": "2026-01-08T23:41:31.408073",
+          "approach": "Implemented: Create varied commentary templates for each event type with randomization",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "3.1": {
+      "attempts": [
+        {
+          "session": 8,
+          "timestamp": "2026-01-08T23:45:48.615769",
+          "approach": "Implemented: Create a Pygame UI component that renders commentary messages in a scrollable panel",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "3.2": {
+      "attempts": [
+        {
+          "session": 9,
+          "timestamp": "2026-01-08T23:50:50.179385",
+          "approach": "Implemented: Apply F1 broadcast-style visual design to the commentary panel",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "4.1": {
+      "attempts": [
+        {
+          "session": 10,
+          "timestamp": "2026-01-08T23:54:03.564060",
+          "approach": "Implemented: Add commentary panel below the timing tower in the timing screen area",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
+    },
+    "4.2": {
+      "attempts": [
+        {
+          "session": 11,
+          "timestamp": "2026-01-08T23:57:20.183188",
+          "approach": "Implemented: Allow user to pause commentary auto-scroll to review past events",
+          "success": true,
+          "error": null
+        }
+      ],
+      "status": "completed"
     }
   },
   "stuck_subtasks": [],
   "metadata": {
     "created_at": "2026-01-08T23:23:04.573923",
-    "last_updated": "2026-01-08T23:34:31.648707"
+    "last_updated": "2026-01-08T23:57:20.183198"
   }
 }

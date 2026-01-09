@@ -26,6 +26,7 @@ class RaceEngine:
         self.event_manager = EventManager()
         self.fastest_lap_time = None
         self.fastest_lap_driver = None
+        self.race_end_event_generated = False
 
         # Initialize cars
         self._initialize_cars()
@@ -243,6 +244,54 @@ class RaceEngine:
                         # First lap completed, just record it without event
                         self.fastest_lap_time = car.last_lap_time
                         self.fastest_lap_driver = car.driver_name
+
+        # Detect race end - generate event when leader crosses the finish line
+        if not self.race_end_event_generated and self.is_race_finished():
+            winner = self.cars[0]
+
+            # Calculate margin to second place
+            if len(self.cars) > 1:
+                second_place = self.cars[1]
+                margin = second_place.gap_to_leader_time
+            else:
+                margin = 0.0
+
+            # Find notable position changes (top 3 biggest gainers)
+            position_changes = []
+            for car in self.cars:
+                change = car.starting_position - car.position
+                if change > 0:  # Only gainers
+                    position_changes.append((car, change))
+
+            # Sort by biggest gains and take top 3
+            position_changes.sort(key=lambda x: x[1], reverse=True)
+            notable_changes = position_changes[:3] if position_changes else []
+
+            # Build message with winner, margin, and notable changes
+            message = f"{winner.driver_short} wins"
+            if margin > 0:
+                message += f" by {margin:.1f}s"
+
+            # Add notable position changes to message
+            notable_drivers = []
+            if notable_changes:
+                for car, change in notable_changes:
+                    notable_drivers.append(f"{car.driver_short} (+{change})")
+
+            # Create race end event
+            event = RaceEvent(
+                event_type=EventType.RACE_END,
+                lap=current_lap,
+                timestamp=self.race_time,
+                drivers=[winner.driver_name],
+                message=message
+            )
+            # Store notable changes as additional data in the message for commentary
+            if notable_drivers:
+                event.notable_changes = notable_drivers
+
+            self.event_manager.add_event(event)
+            self.race_end_event_generated = True
 
     def get_cars_by_position(self):
         """Get cars sorted by current position"""

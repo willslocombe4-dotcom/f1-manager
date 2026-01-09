@@ -20,8 +20,8 @@ Created implementation plan with 4 phases, 10 subtasks total.
 - [x] 3.2 Style commentary panel to match F1 broadcast
 
 ### Phase 4: Integration and Polish (4 subtasks)
-- [ ] 4.1 Integrate CommentaryPanel into TimingScreen
-- [ ] 4.2 Add commentary pause functionality
+- [x] 4.1 Integrate CommentaryPanel into TimingScreen
+- [x] 4.2 Add commentary pause functionality
 - [ ] 4.3 Add race end summary event
 - [ ] 4.4 End-to-end testing and polish
 
@@ -45,3 +45,5 @@ Created implementation plan with 4 phases, 10 subtasks total.
 - 2025-01-08: Completed subtask 2.2 - Added 3-6 varied commentary templates for each event type with randomization. Includes authentic F1 phrases like DRS, purple sector, Box box box, checkered flag, etc. All templates use random.choice() for variety
 - 2025-01-08: Completed subtask 3.1 - Created CommentaryPanel UI component that renders commentary messages in a scrollable panel. Displays 3-5 recent events with lap badges, team color-coded driver names, smooth scrolling animation, and fade effects. Follows project patterns with F1 broadcast styling
 - 2025-01-08: Completed subtask 3.2 - Applied F1 broadcast-style visual design to commentary panel. Added event type color coding with accent bars (green/orange/blue/purple/gold), enhanced lap badges with colored borders, F1 red header accent, improved visual hierarchy. All acceptance criteria met
+- 2025-01-08: Completed subtask 4.1 - Integrated CommentaryPanel into TimingScreen below timing rows. Panel renders at y=650 with proper event display and driver-team color mapping
+- 2025-01-08: Completed subtask 4.2 - Added commentary pause functionality. C key toggles pause, UP/DOWN arrows scroll through paused commentary, visual "PAUSED" indicator with orange accent, auto-resume after 5 seconds of inactivity
