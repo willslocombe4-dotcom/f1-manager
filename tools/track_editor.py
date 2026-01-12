@@ -102,6 +102,10 @@ class TrackEditor:
         self.bg_image_visible = True
         self.bg_image_opacity = 128  # 0-255, default 50%
 
+        # Racing line cache
+        self.racing_line_surface = None
+        self.racing_line_dirty = True
+
     def run(self):
         """Main editor loop"""
         running = True
@@ -179,6 +183,7 @@ class TrackEditor:
                 # Place new waypoint
                 self.waypoints.append((x, y))
                 self.selected_waypoint = len(self.waypoints) - 1
+                self.racing_line_dirty = True
                 self.show_message(f"Waypoint {len(self.waypoints)} placed")
 
         elif button == 3:  # Right click
@@ -187,6 +192,7 @@ class TrackEditor:
             if clicked_idx is not None:
                 self.waypoints.pop(clicked_idx)
                 self.selected_waypoint = None
+                self.racing_line_dirty = True
                 self.show_message(f"Waypoint deleted ({len(self.waypoints)} remaining)")
 
     def handle_mouse_up(self, button):
@@ -210,6 +216,7 @@ class TrackEditor:
             x = max(0, min(x, TRACK_VIEW_WIDTH - 1))
             y = max(0, min(y, TRACK_VIEW_HEIGHT - 1))
             self.waypoints[self.selected_waypoint] = (x, y)
+            self.racing_line_dirty = True
 
     def get_waypoint_at_pos(self, pos):
         """Get index of waypoint at mouse position, or None"""
@@ -227,6 +234,7 @@ class TrackEditor:
         if self.selected_waypoint is not None and len(self.waypoints) > 0:
             self.waypoints.pop(self.selected_waypoint)
             self.selected_waypoint = None
+            self.racing_line_dirty = True
             self.show_message(f"Waypoint deleted ({len(self.waypoints)} remaining)")
 
     def clear_waypoints(self):
@@ -234,6 +242,7 @@ class TrackEditor:
         self.waypoints = []
         self.selected_waypoint = None
         self.preview_progress = 0.0
+        self.racing_line_dirty = True
         self.show_message("All waypoints cleared")
 
     def save_track(self):
@@ -294,6 +303,7 @@ class TrackEditor:
             self.selected_waypoint = None
             self.preview_progress = 0.0
             self.current_file = files[0]
+            self.racing_line_dirty = True
 
             # Load background image if present
             if 'background_image' in data and data['background_image']:
@@ -495,23 +505,31 @@ class TrackEditor:
         if len(self.waypoints) < 2:
             return
 
-        # Draw line segments
-        for i in range(len(self.waypoints)):
-            next_i = (i + 1) % len(self.waypoints)
-            pygame.draw.line(
-                self.screen,
-                TRACK_LINE_COLOR,
-                self.waypoints[i],
-                self.waypoints[next_i],
-                TRACK_LINE_WIDTH
-            )
+        # Recreate surface if dirty or missing
+        if self.racing_line_dirty or self.racing_line_surface is None:
+            self.racing_line_surface = pygame.Surface((TRACK_VIEW_WIDTH, TRACK_VIEW_HEIGHT), pygame.SRCALPHA)
+            
+            # Draw line segments
+            for i in range(len(self.waypoints)):
+                next_i = (i + 1) % len(self.waypoints)
+                pygame.draw.line(
+                    self.racing_line_surface,
+                    TRACK_LINE_COLOR,
+                    self.waypoints[i],
+                    self.waypoints[next_i],
+                    TRACK_LINE_WIDTH
+                )
 
-        # Draw filled polygon if we have enough points
-        if len(self.waypoints) >= 3:
-            # Draw semi-transparent track surface
-            surface = pygame.Surface((TRACK_VIEW_WIDTH, TRACK_VIEW_HEIGHT), pygame.SRCALPHA)
-            pygame.draw.polygon(surface, (*TRACK_LINE_COLOR, 30), self.waypoints)
-            self.screen.blit(surface, (0, 0))
+            # Draw filled polygon if we have enough points
+            if len(self.waypoints) >= 3:
+                # Draw semi-transparent track surface
+                pygame.draw.polygon(self.racing_line_surface, (*TRACK_LINE_COLOR, 30), self.waypoints)
+            
+            self.racing_line_dirty = False
+
+        # Blit cached surface
+        if self.racing_line_surface:
+            self.screen.blit(self.racing_line_surface, (0, 0))
 
     def draw_waypoints(self):
         """Draw waypoint markers"""
