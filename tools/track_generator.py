@@ -527,8 +527,17 @@ class TrackGenerator:
         MIN_RADIUS = 100
         MAX_RADIUS = 400
         
-        # Phase 1: Skeleton Generation (Angular Sort)
-        angles = sorted([random.uniform(0, 2 * math.pi) for _ in range(num_points)])
+        # Phase 1: Skeleton Generation (Sector Method)
+        # Divide circle into N sectors to prevent self-intersections
+        sector_size = (2 * math.pi) / num_points
+        margin = sector_size * 0.15 # Keep points away from sector boundaries
+        
+        angles = []
+        for i in range(num_points):
+            min_angle = i * sector_size + margin
+            max_angle = (i + 1) * sector_size - margin
+            angle = random.uniform(min_angle, max_angle)
+            angles.append(angle)
         
         # Generate initial radii
         radii = []
@@ -568,6 +577,9 @@ class TrackGenerator:
         # The spec says "smooth passes". We'll interpret this as samples_per_segment
         samples = max(1, smooth_passes * 2) 
         waypoints = self._catmull_rom_spline(points, samples_per_segment=samples)
+        
+        # Phase 4: Resampling (Uniform Spacing)
+        waypoints = self._resample_track(waypoints, spacing=20)
         
         # Scale to canvas
         waypoints = self._scale_to_canvas(waypoints)
@@ -739,6 +751,79 @@ class TrackGenerator:
         
         return result
     
+    def _resample_track(self, points, spacing=20):
+        """
+        Resample a list of points to have uniform spacing.
+        """
+        if not points:
+            return points
+
+        # Calculate total length and segment lengths
+        total_length = 0
+        segments = []
+        
+        # Include the closing segment (last point to first point)
+        # But wait, _catmull_rom_spline might not return a closed loop explicitly if the input wasn't closed?
+        # The input 'points' to this function are the output of _catmull_rom_spline.
+        # _catmull_rom_spline iterates 'n' times, wrapping indices, so it produces a closed loop of points?
+        # Let's check _catmull_rom_spline. It returns 'n * samples' points.
+        # It goes from i=0 to n-1. 
+        # For i=n-1, p1 is points[n-1], p2 is points[0].
+        # So the last point generated is close to points[0].
+        # However, usually splines generate a sequence of points.
+        # Let's treat it as a closed loop where we connect the last point back to the first.
+        
+        n_points = len(points)
+        for i in range(n_points):
+            p1 = points[i]
+            p2 = points[(i + 1) % n_points]
+            dist = math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
+            segments.append(dist)
+            total_length += dist
+            
+        # New points
+        new_points = []
+        current_dist = 0
+        target_dist = 0
+        
+        # Start with the first point
+        # new_points.append(points[0]) 
+        # Actually, let's just walk the path.
+        
+        segment_idx = 0
+        segment_progress = 0 # Distance along current segment
+        
+        # We want points at 0, spacing, 2*spacing, ...
+        # up to total_length.
+        
+        num_new_points = int(total_length / spacing)
+        if num_new_points < 3:
+            return points # Too short
+            
+        real_spacing = total_length / num_new_points # Adjust slightly to fit exactly
+        
+        for i in range(num_new_points):
+            target = i * real_spacing
+            
+            # Find which segment contains 'target'
+            while current_dist + segments[segment_idx] < target:
+                current_dist += segments[segment_idx]
+                segment_idx = (segment_idx + 1) % n_points
+            
+            # Interpolate in current segment
+            segment_len = segments[segment_idx]
+            remaining = target - current_dist
+            t = remaining / segment_len if segment_len > 0 else 0
+            
+            p1 = points[segment_idx]
+            p2 = points[(segment_idx + 1) % n_points]
+            
+            x = p1[0] + (p2[0] - p1[0]) * t
+            y = p1[1] + (p2[1] - p1[1]) * t
+            new_points.append((x, y))
+            
+        return new_points
+
     def _scale_to_canvas(self, waypoints):
         """Scale waypoints to fit within canvas with margin"""
         if not waypoints:
