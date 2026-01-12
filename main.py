@@ -24,7 +24,7 @@ class F1Manager:
     def __init__(self):
         # Initialize pygame
         pygame.init()
-        pygame.display.set_caption("F1 Manager - Live Race")
+        pygame.display.set_caption(f"F1 Manager - Live Race v{config.VERSION}")
 
         # Load settings before creating display
         SettingsPersistence.load(runtime_config)
