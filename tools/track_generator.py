@@ -530,7 +530,7 @@ class TrackGenerator:
         points = []
         angles = sorted([random.uniform(0, 2 * math.pi) for _ in range(num_points)])
         
-        # Hairpin logic: occasionally force a sequence of High -> Low -> High radius
+        # Hairpin logic removed to prevent sharp edges
         # We'll just use random radii for now, modulated by chaos
         
         for angle in angles:
@@ -547,46 +547,6 @@ class TrackGenerator:
             y = CENTER[1] + r * math.sin(angle)
             points.append((x, y))
             
-        # Phase 2: Perturbation (Complexity Pass)
-        # Iterate edges, split if long, displace
-        # For simplicity in this version, we'll skip complex self-intersection checks 
-        # and rely on the angular sort to keep things mostly clean, 
-        # but we will do a simple displacement pass.
-        
-        if chaos > 0.3:
-            new_points = []
-            n = len(points)
-            for i in range(n):
-                p1 = points[i]
-                p2 = points[(i + 1) % n]
-                
-                new_points.append(p1)
-                
-                # Distance check
-                dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-                if dist > 150: # Threshold
-                    # Midpoint
-                    mid_x = (p1[0] + p2[0]) / 2
-                    mid_y = (p1[1] + p2[1]) / 2
-                    
-                    # Perpendicular vector
-                    dx = p2[0] - p1[0]
-                    dy = p2[1] - p1[1]
-                    perp_x, perp_y = -dy, dx
-                    
-                    # Normalize
-                    length = math.hypot(perp_x, perp_y)
-                    if length > 0:
-                        perp_x /= length
-                        perp_y /= length
-                        
-                    # Displace
-                    amount = random.uniform(-1, 1) * chaos * 50
-                    mid_x += perp_x * amount
-                    mid_y += perp_y * amount
-                    
-                    new_points.append((mid_x, mid_y))
-            points = new_points
 
         # Phase 3: Smoothing
         # We use the existing Catmull-Rom, but we might need multiple passes or higher density
