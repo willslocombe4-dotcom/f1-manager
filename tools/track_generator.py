@@ -508,7 +508,7 @@ class TrackGenerator:
         # Scale to canvas
         return self._scale_to_canvas(waypoints)
     
-    def generate_procedural(self, seed=None, num_points=12, chaos=0.5, smooth_passes=3):
+    def generate_procedural(self, seed=None, num_points=12, chaos=0.5, smooth_passes=3, radius_smooth_passes=2):
         """
         Generate a track using the "Angular Sort" algorithm described in the spec.
         
@@ -517,6 +517,7 @@ class TrackGenerator:
             num_points: Number of initial control points (skeleton)
             chaos: 0.0-1.0 factor for radius variation and perturbation
             smooth_passes: Number of subdivision passes (spline density)
+            radius_smooth_passes: Number of smoothing passes for control point radii
         """
         if seed is not None:
             random.seed(seed)
@@ -527,13 +528,11 @@ class TrackGenerator:
         MAX_RADIUS = 400
         
         # Phase 1: Skeleton Generation (Angular Sort)
-        points = []
         angles = sorted([random.uniform(0, 2 * math.pi) for _ in range(num_points)])
         
-        # Hairpin logic removed to prevent sharp edges
-        # We'll just use random radii for now, modulated by chaos
-        
-        for angle in angles:
+        # Generate initial radii
+        radii = []
+        for _ in range(num_points):
             # Base radius
             r = random.uniform(MIN_RADIUS, MAX_RADIUS)
             
@@ -542,13 +541,29 @@ class TrackGenerator:
             if chaos < 0.5:
                 target = (MIN_RADIUS + MAX_RADIUS) / 2
                 r = target + (r - target) * (chaos * 2)
-                
+            
+            radii.append(r)
+
+        # Phase 2: Radius Smoothing
+        for _ in range(radius_smooth_passes):
+            new_radii = []
+            count = len(radii)
+            for i in range(count):
+                prev_r = radii[i-1]
+                curr_r = radii[i]
+                next_r = radii[(i+1) % count]
+                new_radii.append((prev_r + curr_r + next_r) / 3)
+            radii = new_radii
+            
+        # Convert to Cartesian
+        points = []
+        for i, angle in enumerate(angles):
+            r = radii[i]
             x = CENTER[0] + r * math.cos(angle)
             y = CENTER[1] + r * math.sin(angle)
             points.append((x, y))
-            
 
-        # Phase 3: Smoothing
+        # Phase 3: Smoothing (Spline)
         # We use the existing Catmull-Rom, but we might need multiple passes or higher density
         # The spec says "smooth passes". We'll interpret this as samples_per_segment
         samples = max(1, smooth_passes * 2) 
