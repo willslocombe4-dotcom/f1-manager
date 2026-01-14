@@ -24,7 +24,7 @@ class F1Manager:
     def __init__(self):
         # Initialize pygame
         pygame.init()
-        pygame.display.set_caption("F1 Manager - Live Race")
+        pygame.display.set_caption(f"F1 Manager - Live Race v{config.VERSION}")
 
         # Load settings before creating display
         SettingsPersistence.load(runtime_config)
@@ -49,6 +49,12 @@ class F1Manager:
         
         # Create display based on settings
         if fullscreen:
+            # Validate resolution for fullscreen
+            if display_modes and (display_width, display_height) not in display_modes:
+                print(f"Resolution {display_width}x{display_height} not supported in fullscreen. Using native {self.native_width}x{self.native_height}")
+                display_width = self.native_width
+                display_height = self.native_height
+                
             self.screen = pygame.display.set_mode(
                 (display_width, display_height),
                 pygame.FULLSCREEN

@@ -2,6 +2,8 @@
 F1 Manager - Game Configuration
 """
 
+VERSION = "0.1.0"
+
 # Screen settings
 SCREEN_WIDTH = 1600
 SCREEN_HEIGHT = 900

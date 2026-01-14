@@ -508,58 +508,98 @@ class TrackGenerator:
         # Scale to canvas
         return self._scale_to_canvas(waypoints)
     
-    def generate_random(self, complexity="medium", seed=None):
+    def generate_procedural(self, seed=None, num_points=12, chaos=0.5, smooth_passes=3, radius_smooth_passes=2):
         """
-        Generate a random F1-style track with varied corner types.
-        
-        Every track will have:
-        - Long straights (for top speed)
-        - High-speed corners (sweeping, minimal braking)
-        - Medium-speed corners (some braking required)
-        - Low-speed corners (hairpins, tight turns)
-        - Chicanes (quick direction changes)
-        - Unique character (no two tracks alike)
+        Generate a track using the "Angular Sort" algorithm described in the spec.
         
         Args:
-            complexity: "simple", "medium", or "complex"
-            seed: Random seed for reproducibility
-            
-        Returns:
-            List of (x, y) waypoints
+            seed: Random seed
+            num_points: Number of initial control points (skeleton)
+            chaos: 0.0-1.0 factor for radius variation and perturbation
+            smooth_passes: Number of subdivision passes (spline density)
+            radius_smooth_passes: Number of smoothing passes for control point radii
         """
         if seed is not None:
             random.seed(seed)
+            
+        # Constants
+        CENTER = (self.canvas_width / 2, self.canvas_height / 2)
+        MIN_RADIUS = 100
+        MAX_RADIUS = 400
         
-        # Complexity settings - keep it simple to avoid messy tracks
-        # Target: 50-80 waypoints total (like the default track has 65)
-        settings = {
-            "simple": {
-                "control_points": 12,
-                "samples_per_segment": 4,  # 12 * 4 = ~48 waypoints
-            },
-            "medium": {
-                "control_points": 16,
-                "samples_per_segment": 4,  # 16 * 4 = ~64 waypoints
-            },
-            "complex": {
-                "control_points": 20,
-                "samples_per_segment": 4,  # 20 * 4 = ~80 waypoints
-            },
-        }
+        # Phase 1: Skeleton Generation (Sector Method)
+        # Divide circle into N sectors to prevent self-intersections
+        sector_size = (2 * math.pi) / num_points
+        margin = sector_size * 0.15 # Keep points away from sector boundaries
         
-        config = settings.get(complexity, settings["medium"])
+        angles = []
+        for i in range(num_points):
+            min_angle = i * sector_size + margin
+            max_angle = (i + 1) * sector_size - margin
+            angle = random.uniform(min_angle, max_angle)
+            angles.append(angle)
         
-        # Generate control points with built-in variety (straights, corners, etc.)
-        control_points = self._generate_varied_control_points(config["control_points"])
+        # Generate initial radii
+        radii = []
+        for _ in range(num_points):
+            # Base radius
+            r = random.uniform(MIN_RADIUS, MAX_RADIUS)
+            
+            # Apply chaos to radius (higher chaos = more variance)
+            # If chaos is low, push towards a medium radius
+            if chaos < 0.5:
+                target = (MIN_RADIUS + MAX_RADIUS) / 2
+                r = target + (r - target) * (chaos * 2)
+            
+            radii.append(r)
+
+        # Phase 2: Radius Smoothing
+        for _ in range(radius_smooth_passes):
+            new_radii = []
+            count = len(radii)
+            for i in range(count):
+                prev_r = radii[i-1]
+                curr_r = radii[i]
+                next_r = radii[(i+1) % count]
+                new_radii.append((prev_r + curr_r + next_r) / 3)
+            radii = new_radii
+            
+        # Convert to Cartesian
+        points = []
+        for i, angle in enumerate(angles):
+            r = radii[i]
+            x = CENTER[0] + r * math.cos(angle)
+            y = CENTER[1] + r * math.sin(angle)
+            points.append((x, y))
+
+        # Phase 3: Smoothing (Spline)
+        # We use the existing Catmull-Rom, but we might need multiple passes or higher density
+        # The spec says "smooth passes". We'll interpret this as samples_per_segment
+        samples = max(1, smooth_passes * 2) 
+        waypoints = self._catmull_rom_spline(points, samples_per_segment=samples)
         
-        # Generate smooth curve through control points
-        waypoints = self._catmull_rom_spline(control_points, samples_per_segment=config["samples_per_segment"])
+        # Phase 4: Resampling (Uniform Spacing)
+        waypoints = self._resample_track(waypoints, spacing=20)
         
         # Scale to canvas
         waypoints = self._scale_to_canvas(waypoints)
         
-        # Templates are designed to not be ovals, so no need to check
         return waypoints
+
+    def generate_random(self, complexity="medium", seed=None):
+        """
+        Legacy wrapper for generate_procedural to maintain backward compatibility
+        or use the new algorithm.
+        """
+        # Map complexity to new params
+        params = {
+            "simple": {"num_points": 10, "chaos": 0.2, "smooth_passes": 2},
+            "medium": {"num_points": 15, "chaos": 0.5, "smooth_passes": 3},
+            "complex": {"num_points": 20, "chaos": 0.8, "smooth_passes": 4},
+        }
+        p = params.get(complexity, params["medium"])
+        return self.generate_procedural(seed=seed, **p)
+
     
     def _generate_varied_control_points(self, num_points):
         """
@@ -711,6 +751,79 @@ class TrackGenerator:
         
         return result
     
+    def _resample_track(self, points, spacing=20):
+        """
+        Resample a list of points to have uniform spacing.
+        """
+        if not points:
+            return points
+
+        # Calculate total length and segment lengths
+        total_length = 0
+        segments = []
+        
+        # Include the closing segment (last point to first point)
+        # But wait, _catmull_rom_spline might not return a closed loop explicitly if the input wasn't closed?
+        # The input 'points' to this function are the output of _catmull_rom_spline.
+        # _catmull_rom_spline iterates 'n' times, wrapping indices, so it produces a closed loop of points?
+        # Let's check _catmull_rom_spline. It returns 'n * samples' points.
+        # It goes from i=0 to n-1. 
+        # For i=n-1, p1 is points[n-1], p2 is points[0].
+        # So the last point generated is close to points[0].
+        # However, usually splines generate a sequence of points.
+        # Let's treat it as a closed loop where we connect the last point back to the first.
+        
+        n_points = len(points)
+        for i in range(n_points):
+            p1 = points[i]
+            p2 = points[(i + 1) % n_points]
+            dist = math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
+            segments.append(dist)
+            total_length += dist
+            
+        # New points
+        new_points = []
+        current_dist = 0
+        target_dist = 0
+        
+        # Start with the first point
+        # new_points.append(points[0]) 
+        # Actually, let's just walk the path.
+        
+        segment_idx = 0
+        segment_progress = 0 # Distance along current segment
+        
+        # We want points at 0, spacing, 2*spacing, ...
+        # up to total_length.
+        
+        num_new_points = int(total_length / spacing)
+        if num_new_points < 3:
+            return points # Too short
+            
+        real_spacing = total_length / num_new_points # Adjust slightly to fit exactly
+        
+        for i in range(num_new_points):
+            target = i * real_spacing
+            
+            # Find which segment contains 'target'
+            while current_dist + segments[segment_idx] < target:
+                current_dist += segments[segment_idx]
+                segment_idx = (segment_idx + 1) % n_points
+            
+            # Interpolate in current segment
+            segment_len = segments[segment_idx]
+            remaining = target - current_dist
+            t = remaining / segment_len if segment_len > 0 else 0
+            
+            p1 = points[segment_idx]
+            p2 = points[(segment_idx + 1) % n_points]
+            
+            x = p1[0] + (p2[0] - p1[0]) * t
+            y = p1[1] + (p2[1] - p1[1]) * t
+            new_points.append((x, y))
+            
+        return new_points
+
     def _scale_to_canvas(self, waypoints):
         """Scale waypoints to fit within canvas with margin"""
         if not waypoints:
@@ -890,6 +1003,10 @@ Examples:
     parser.add_argument("--export-python", action="store_true", 
                         help="Also export as Python code")
     
+    parser.add_argument("--points", type=int, default=12, help="Number of control points")
+    parser.add_argument("--chaos", type=float, default=0.5, help="Chaos factor (0.0-1.0)")
+    parser.add_argument("--smooth", type=int, default=3, help="Smoothing passes")
+    
     args = parser.parse_args()
     
     gen = TrackGenerator()
@@ -913,11 +1030,23 @@ Examples:
     
     elif args.random:
         print(f"\n=== Generating Random Track ===\n")
-        print(f"Complexity: {args.complexity}")
-        if args.seed:
-            print(f"Seed: {args.seed}")
+        # Check if using legacy complexity or new fine-grained controls
+        # If user specified points/chaos/smooth, use those.
+        # Otherwise if they specified complexity, use that mapping.
         
-        waypoints = gen.generate_random(args.complexity, args.seed)
+        # For now, we'll just pass everything to generate_procedural if they didn't use complexity
+        # But wait, generate_random maps complexity.
+        
+        if args.complexity != "medium" and args.points == 12:
+             # User specified complexity but default points
+             waypoints = gen.generate_random(args.complexity, args.seed)
+        else:
+             # Use the fine grained controls
+             print(f"Points: {args.points}, Chaos: {args.chaos}, Smooth: {args.smooth}")
+             if args.seed:
+                 print(f"Seed: {args.seed}")
+             waypoints = gen.generate_procedural(args.seed, args.points, args.chaos, args.smooth)
+             
         name = args.name
     
     else:
