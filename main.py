@@ -9,6 +9,7 @@ from race.race_engine import RaceEngine
 from race.track_loader import get_default_waypoints
 from ui.renderer import TrackRenderer
 from ui.timing_screen import TimingScreen
+from ui.commentary_panel import CommentaryPanel
 from ui.results_screen import ResultsScreen
 from ui.main_menu import MainMenu
 from ui.track_selection import TrackSelectionScreen
@@ -117,6 +118,7 @@ class F1Manager:
         self.race_engine = None
         self.track_renderer = None
         self.timing_screen = None
+        self.commentary_panel = None
         self.results_screen = None
     
     def _start_race(self, waypoints=None, decorations=None):
@@ -126,6 +128,17 @@ class F1Manager:
         self.race_engine = RaceEngine(waypoints=waypoints, decorations=decorations)
         self.track_renderer = TrackRenderer(self.screen)
         self.timing_screen = TimingScreen(self.screen)
+
+        # Initialize commentary panel at top left of screen
+        self.commentary_panel = CommentaryPanel(
+            self.screen,
+            x=20,  # Padding from left edge
+            y=20,  # Padding from top edge
+            width=450,  # Narrower than timing screen
+            height=180  # Height for 2 events
+        )
+        self.commentary_panel.max_events_shown = 2
+
         self.results_screen = ResultsScreen(self.screen)
         self.paused = False
         self.state = config.GAME_STATE_RACING
@@ -135,13 +148,14 @@ class F1Manager:
         # Reset track renderer cache if it exists
         if self.track_renderer:
             self.track_renderer.reset_cache()
-        
+
         # Clear race components
         self.race_engine = None
         self.track_renderer = None
         self.timing_screen = None
+        self.commentary_panel = None
         self.results_screen = None
-        
+
         # Reset menu state
         self.main_menu.selected_index = 0
         self.state = config.GAME_STATE_MENU
@@ -314,16 +328,16 @@ class F1Manager:
 
             # Commentary pause control (C key)
             elif event.key == pygame.K_c:
-                if self.timing_screen:
-                    self.timing_screen.commentary_panel.toggle_pause()
+                if self.commentary_panel:
+                    self.commentary_panel.toggle_pause()
 
             # Commentary scroll control (UP/DOWN arrow keys)
             elif event.key == pygame.K_UP:
-                if self.timing_screen:
-                    self.timing_screen.commentary_panel.scroll_up()
+                if self.commentary_panel:
+                    self.commentary_panel.scroll_up()
             elif event.key == pygame.K_DOWN:
-                if self.timing_screen:
-                    self.timing_screen.commentary_panel.scroll_down()
+                if self.commentary_panel:
+                    self.commentary_panel.scroll_down()
 
             # Speed control keys (1-5)
             elif event.key == pygame.K_1:

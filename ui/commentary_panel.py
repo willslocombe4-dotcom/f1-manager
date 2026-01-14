@@ -67,6 +67,12 @@ class CommentaryPanel:
         self.last_interaction_time = 0
         self.auto_resume_delay = 5.0  # Seconds of inactivity before auto-resume
 
+        # 3-second display delay for readability
+        self.event_display_duration = 3.0  # Seconds to display each event
+        self.current_event_id = None  # ID of currently displayed event
+        self.current_event_start_time = 0  # When current event started displaying
+        self.displayed_events = []  # Events currently being displayed
+
         # Cache for team lookup
         self.driver_to_team = {}
 
@@ -88,6 +94,8 @@ class CommentaryPanel:
         if not self.is_paused:
             # Reset manual scroll when resuming
             self.manual_scroll_index = 0
+            # Reset event display timer to avoid immediate skip
+            self.current_event_start_time = time.time()
 
     def scroll_up(self):
         """Scroll up through commentary (show older events)"""
@@ -144,8 +152,8 @@ class CommentaryPanel:
             all_events = event_manager.get_recent_events(self.max_events_shown + self.manual_scroll_index)
             recent_events = all_events[self.manual_scroll_index:self.manual_scroll_index + self.max_events_shown]
         else:
-            # Normal auto-scroll behavior
-            recent_events = event_manager.get_recent_events(self.max_events_shown)
+            # 3-second display delay: Show events for 3 seconds each, skip to most recent to avoid backlog
+            recent_events = self._get_events_with_delay(event_manager)
 
         # Update scroll animation (disabled when paused)
         if not self.is_paused:
@@ -156,6 +164,53 @@ class CommentaryPanel:
 
         # Blit to main surface
         self.surface.blit(self.panel_surface, (self.x, self.y))
+
+    def _get_events_with_delay(self, event_manager):
+        """
+        Get events to display with 3-second delay per event.
+        Skips to most recent event to avoid backlog.
+
+        Args:
+            event_manager: EventManager instance with race events
+
+        Returns:
+            list: Events to display
+        """
+        # Get all recent events
+        all_recent = event_manager.get_recent_events(20)
+
+        if not all_recent:
+            # No events yet
+            self.displayed_events = []
+            return []
+
+        current_time = time.time()
+
+        # Get the most recent event
+        latest_event = all_recent[0]
+        latest_event_id = id(latest_event)
+
+        # Check if we need to switch to a new event
+        if self.current_event_id is None:
+            # First event ever - start displaying it
+            self.current_event_id = latest_event_id
+            self.current_event_start_time = current_time
+            self.displayed_events = [latest_event]
+
+        elif latest_event_id != self.current_event_id:
+            # New event available - check if we should switch
+            time_elapsed = current_time - self.current_event_start_time
+
+            if time_elapsed >= self.event_display_duration:
+                # 3 seconds have passed - switch to the new (most recent) event
+                # This skips any intermediate events to avoid backlog
+                self.current_event_id = latest_event_id
+                self.current_event_start_time = current_time
+                self.displayed_events = [latest_event]
+            # else: keep displaying current event until 3 seconds pass
+
+        # Return the events we're currently displaying (limited by max_events_shown)
+        return self.displayed_events[:self.max_events_shown]
 
     def _draw_header(self):
         """Draw F1 broadcast-style commentary panel header"""

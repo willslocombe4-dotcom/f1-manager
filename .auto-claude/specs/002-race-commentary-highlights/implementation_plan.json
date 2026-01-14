@@ -3,8 +3,8 @@
   "description": "Display text-based commentary for key race events like overtakes, pit stops, and fastest laps. Creates the feeling of watching an F1 broadcast with expert commentary highlighting important moments.",
   "created_at": "2026-01-08T05:21:19.716Z",
   "updated_at": "2026-01-08T23:23:03.187Z",
-  "status": "completed",
-  "planStatus": "approved",
+  "status": "human_review",
+  "planStatus": "review",
   "phases": [
     {
       "id": "phase_1",
@@ -234,18 +234,18 @@
   ],
   "qa_signoff": {
     "status": "approved",
-    "timestamp": "2026-01-09T00:35:00.000000+00:00",
     "qa_session": 2,
-    "report_file": "qa_report.md",
-    "tests_passed": {
-      "unit": "5/5",
-      "integration": "5/5",
-      "e2e": "N/A"
-    },
-    "verified_by": "qa_agent"
+    "issues_found": [
+      {
+        "description": "None - All user feedback addressed successfully. Both UX issues resolved (reduced events to 2, moved panel to top right). All tests passing (5/5). Performance excellent (1264 FPS). No regressions detected."
+      }
+    ],
+    "tests_passed": {},
+    "timestamp": "2026-01-09T00:52:28.781806+00:00",
+    "ready_for_qa_revalidation": false
   },
   "notes": "Commentary system follows existing patterns: separate race logic (race/) from UI (ui/). Events stored in RaceEngine, rendered by TimingScreen. Uses existing config.py colors and fonts.",
-  "last_updated": "2026-01-09T00:07:14.719407+00:00",
+  "last_updated": "2026-01-09T00:52:28.781816+00:00",
   "qa_iteration_history": [
     {
       "iteration": 1,
@@ -264,11 +264,18 @@
       "timestamp": "2026-01-09T00:21:19.087245+00:00",
       "issues": [],
       "duration_seconds": 366.87
+    },
+    {
+      "iteration": 3,
+      "status": "approved",
+      "timestamp": "2026-01-09T00:52:49.155770+00:00",
+      "issues": [],
+      "duration_seconds": 552.72
     }
   ],
   "qa_stats": {
-    "total_iterations": 2,
-    "last_iteration": 2,
+    "total_iterations": 3,
+    "last_iteration": 3,
     "last_status": "approved",
     "issues_by_type": {
       "unknown": 1
