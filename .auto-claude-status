@@ -1,7 +1,7 @@
 {
   "active": true,
   "spec": "001-real-f1-circuit-layouts",
-  "state": "building",
+  "state": "paused",
   "subtasks": {
     "completed": 14,
     "total": 21,
@@ -18,8 +18,8 @@
     "max": 1
   },
   "session": {
-    "number": 7,
+    "number": 8,
     "started_at": "2026-01-08T22:28:05.152509"
   },
-  "last_update": "2026-01-08T23:05:26.355177"
+  "last_update": "2026-01-08T23:11:42.751557"
 }
